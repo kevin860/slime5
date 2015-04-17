@@ -174,13 +174,24 @@
 
         this.courtHeight = this.height / 5;
 
+        this.canChangeColor = false;
         this.player1Character = 0;
         this.player2Character = 1;
-        this.player1 = new Player(SLIME_COLORS[this.player1Character], SLIME_NAMES[this.player1Character]);
-        this.player2 = new Player(SLIME_COLORS[this.player2Character], SLIME_NAMES[this.player2Character]);
+        this.player1 = new Player();
+        this.player2 = new Player();
         this.ball = new Ball();
+        this.nScore = 5;
 
         var _game = this;
+
+        function updateSlimers()
+        {
+            _game.player1.color = SLIME_COLORS[_game.player1Character];
+            _game.player1.name = SLIME_NAMES[_game.player1Character];
+
+            _game.player2.color = SLIME_COLORS[_game.player2Character];
+            _game.player2.name = SLIME_NAMES[_game.player2Character];
+        }
 
         /**
          * Draw the court
@@ -221,14 +232,14 @@
 
         }
 
-        function drawScores(nScore)
+        function drawScores()
         {
             var c = _game.canvas.getContext('2d');
             var k = _game.canvas.height / 40;
             c.clearRect(0, 0, _game.canvas.width, k * 2 + 22);
 
             var l, i;
-            for(l = 0; l < nScore; l++)
+            for(l = 0; l < _game.nScore; l++)
             {
                 i = ((l + 1) * _game.canvas.width) / 24;
                 c.beginPath();
@@ -239,7 +250,7 @@
                 c.stroke();
             }
 
-            for(l = 0; l < 10 - nScore; l++)
+            for(l = 0; l < 10 - _game.nScore; l++)
             {
                 i = _game.canvas.width - (((l + 1) * _game.canvas.width) / 24);
                 c.beginPath();
@@ -299,7 +310,7 @@
             c.fillText(s, _game.canvas.width / 2, i);
         }
 
-        function resetPlayers()
+        function resetSlimers()
         {
             _game.player1.x = 200;
             _game.player1.y = 0;
@@ -397,6 +408,7 @@
 
         function processKeyDown(e)
         {
+            e.stopPropagation();
             switch(e.keyCode)
             {
                 default:
@@ -435,28 +447,34 @@
                     }
                     break;
 
-                //case 'S':
-                //case 's':
-                //    if(!fCanChangeCol)
-                //        break label0;
-                //    do
-                //        p1Col = p1Col != 4 ? p1Col + 1 : 0;
-                //    while(p1Col == p2Col);
-                //    drawScores();
-                //    break label0;
-                //
-                //case Event.DOWN:
-                //case 'K':
-                //case 'k':
-                //    if(fCanChangeCol)
-                //    {
-                //        do
-                //            p2Col = p2Col != 4 ? p2Col + 1 : 0;
-                //        while(p2Col == p1Col);
-                //        drawScores();
-                //        break label0;
-                //    }
-                //// fall through
+                case KEYS:
+                    if(!_game.canChangeColor)
+                    {
+                        break;
+                    }
+                    do
+                    {
+                        _game.player1Character = (_game.player1Character < SLIME_NAMES.length - 1) ? (_game.player1Character + 1) : 0;
+                    }
+                    while(_game.player1Character == _game.player2Character);
+                    updateSlimers();
+                    drawScores();
+                    break;
+
+                case DOWN:
+                case KEYK:
+                    if(!_game.canChangeColor)
+                    {
+                        break;
+                    }
+                    do
+                    {
+                        _game.player2Character = (_game.player2Character < SLIME_NAMES.length - 1) ? (_game.player2Character + 1) : 0;
+                    }
+                    while(_game.player2Character == _game.player1Character);
+                    updateSlimers();
+                    drawScores();
+                    break;
                 //
                 //case ' ':
                 //    mousePressed = true;
@@ -466,6 +484,7 @@
 
         function processKeyUp(e)
         {
+            e.stopPropagation();
             switch(e.keyCode)
             {
                 default:
@@ -524,7 +543,7 @@
             var replayStart = 0;
 
             /* Reset the slimes! */
-            resetPlayers();
+            resetSlimers();
 
             /* Reset the ball */
             resetBall();
@@ -534,7 +553,7 @@
             var fP2Touched = false;
             var nPointsScored = 0;
             var startTime = null;
-            var nScore = 5;
+            _game.nScore = 5;
             var fInPlay = false;
 
             var matchTime = 0;
@@ -547,13 +566,15 @@
                 clear();
                 drawCourt();
                 drawNet();
-                drawScores(nScore);
-                resetPlayers();
+                updateSlimers();
+                drawScores();
+                resetSlimers();
                 resetBall(player2Serves);
                 replayStart = false;
                 replayPos = 0;
                 fP1Touched = false;
                 fP2Touched = false;
+                _game.canChangeColor = true;
                 startTime = new Date().getTime();
                 updateRally();
             }
@@ -567,7 +588,7 @@
                     var scoreTime = new Date().getTime();
                     nPointsScored++;
                     var player2Scores = _game.ball.x <= 500;
-                    nScore += player2Scores ? -1 : 1;
+                    _game.nScore += player2Scores ? -1 : 1;
                     if ((_game.ball.x <= 500) && (scoringRun >= 0))
                     {
                         scoringRun++;
@@ -600,11 +621,11 @@
                         _game.player1.super = false;
                         _game.player2.super = false;
                     }
-                    drawPrompt(getCommentary(fP1Touched, fP2Touched, nScore, nPointsScored, scoringRun), 0);
+                    drawPrompt(getCommentary(fP1Touched, fP2Touched, _game.nScore, nPointsScored, scoringRun), 0);
 
-                    var flag = nScore != 0 && nScore != 10;
-                    if(flag)
+                    if(_game.nScore != 0 && _game.nScore != 10)
                     {
+                        _game.canChangeColor = false;
                         drawPrompt("Click mouse for replay...", 1);
 
                         _game.mousePressed = false;
@@ -626,6 +647,7 @@
                 else
                 {
                     clear();
+                    updateSlimers();
                     moveSlimers();
                     moveBall();
                     draw();
@@ -676,7 +698,6 @@
                     }
                 }
             }
-
 
 
 
