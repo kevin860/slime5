@@ -7,15 +7,15 @@
     /* For debugging */
     /**@const*/ var SHOW_RECT=false;
 
-    /**@const*/ var BALL_RADIUS = 25;
-    /**@const*/ var PLAYER_RADIUS = 50;
-    /**@const*/ var FUDGE = 5;
-    /**@const*/ var TIMING_MULTIPLIER = 1000/60/20;
+    /**@const*/ var BALL_RADIUS = 25; // 25
+    /**@const*/ var SLIME_RADIUS = 50; // 50
+    /**@const*/ var FUDGE = 5; // 5
+    /**@const*/ var TIMING_MULTIPLIER = 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
 
     /**@const*/ var SCORING_RUN_FOR_SUPER = 3;
 
-    /**@const*/ var SLIME_COLORS = ["red", "green", "yellow", "white", "black"];
-    /**@const*/ var SLIME_NAMES = ["Big Red Slime ", "Magic Green Slime ", "Golden Boy ", "The Great White Slime ", "The Grass Tree\251 "];
+    /**@const*/ var SLIME_COLORS = ["red", "green", "yellow", "white", "black", "cyan"];
+    /**@const*/ var SLIME_NAMES = ["Big Red Slime ", "Magic Green Slime ", "Golden Boy ", "The Great White Slime ", "The Grass Tree\251 ", "Cyanatron "];
     /**@const*/ var BALL_COLOR = "yellow";
     /**@const*/ var COURT_COLOR = "grey";
     /**@const*/ var NET_COLOR = "white";
@@ -38,6 +38,15 @@
     /**@const*/ var KEYS = 83;
     /**@const*/ var KEYW = 87;
 
+
+
+    var rob = new Image();
+    rob.addEventListener('load', function(e){
+        SLIME_COLORS.push("imgRob");
+        SLIME_NAMES.push("Rob ");
+    });
+    rob.src="robslime_360.png";
+
     /**
      * A player (slime)
      * @param color
@@ -49,8 +58,10 @@
         this.name = name;
         this.x = 0;
         this.y = 0;
+        this.previousX = 0;
+        this.previousY = 0;
         this.super = false;
-        this.radius = PLAYER_RADIUS;
+        this.radius = SLIME_RADIUS;
         this.diameter = this.radius * 2;
 
         this.setRadius = function(radius)
@@ -72,7 +83,14 @@
             var c = canvas.getContext('2d');
             if (!this.super)
             {
-                c.fillStyle = this.color;
+                if (this.color && this.color.indexOf("img") == 0)
+                {
+                    c.fillStyle = c.createPattern(rob, 'no-repeat');
+                }
+                else
+                {
+                    c.fillStyle = this.color;
+                }
             }
             else
             {
@@ -90,10 +108,10 @@
         this.clear = function(canvas)
         {
             var rPix = this.radius * canvas.width/WIDTH;
-            var xPix = (this.x - this.radius) * canvas.width/WIDTH - 1;
-            var yPix = ((4 * HEIGHT / 5) - this.y) * canvas.height/HEIGHT - rPix - 1;
+            var xPix = (this.previousX - this.radius) * canvas.width/WIDTH - 1;
+            var yPix = ((4 * HEIGHT / 5) - this.previousY) * canvas.height/HEIGHT - rPix - 1;
             var wPix = this.diameter * canvas.width/WIDTH + 2;
-            var hPix = this.radius * canvas.width/WIDTH + (this.y > 0 ? 2 : 1);
+            var hPix = this.radius * canvas.width/WIDTH + 1 + (this.previousY > 0 ? 1 : 0);
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -105,6 +123,26 @@
                 c.strokeRect(xPix, yPix, wPix, hPix);
             }
         };
+
+        /**
+         * Moves the player to a new horizontal position
+         * @param newX new horizontal position
+         */
+        this.setX = function(newX)
+        {
+            this.previousX=this.x;
+            this.x=newX;
+        };
+
+        /**
+         * Moves the player to a new horizontal position
+         * @param newY new horizontal position
+         */
+        this.setY = function(newY)
+        {
+            this.previousY=this.y;
+            this.y=newY;
+        };
     }
 
     /**
@@ -115,6 +153,8 @@
     {
         this.x = 0;
         this.y = 0;
+        this.previousX = 0;
+        this.previousY = 0;
         this.vX = 0;
         this.vY = 0;
 
@@ -143,8 +183,8 @@
         {
             var ballRadPix = (BALL_RADIUS + FUDGE) * canvas.height/HEIGHT;
             var ballDPix = ballRadPix * 2 + 2;
-            var ballXPix = this.x * canvas.width/WIDTH - ballRadPix - 1;
-            var ballYPix = ((4 * HEIGHT / 5) - this.y) * canvas.height/HEIGHT - ballRadPix - 1;
+            var ballXPix = this.previousX * canvas.width/WIDTH - ballRadPix - 1;
+            var ballYPix = ((4 * HEIGHT / 5) - this.previousY) * canvas.height/HEIGHT - ballRadPix - 1;
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -155,7 +195,27 @@
                 c.strokeStyle = "cyan";
                 c.strokeRect(ballXPix, ballYPix, ballDPix, ballDPix);
             }
-        }
+        };
+
+        /**
+         * Moves the ball to a new horizontal position
+         * @param newX new horizontal position
+         */
+        this.setX = function(newX)
+        {
+            this.previousX=this.x;
+            this.x=newX;
+        };
+
+        /**
+         * Moves the ball to a new horizontal position
+         * @param newY new horizontal position
+         */
+        this.setY = function(newY)
+        {
+            this.previousY=this.y;
+            this.y=newY;
+        };
     }
 
     /**
@@ -181,6 +241,17 @@
         this.player2 = new Player();
         this.ball = new Ball();
         this.nScore = 5;
+
+        this.player1Keys = {
+            "left":false,
+            "right":false,
+            "up":false
+        };
+        this.player2Keys = {
+            "left":false,
+            "right":false,
+            "up":false
+        };
 
         var _game = this;
 
@@ -312,21 +383,21 @@
 
         function resetSlimers()
         {
-            _game.player1.x = 200;
-            _game.player1.y = 0;
+            _game.player1.setX(200);
+            _game.player1.setY(0);
             _game.player1.vX = 0;
             _game.player1.vY = 0;
 
-            _game.player2.x = 800;
-            _game.player2.y = 0;
+            _game.player2.setX(800);
+            _game.player2.setY(0);
             _game.player2.vX = 0;
             _game.player2.vY = 0;
         }
 
         function resetBall(player2)
         {
-            _game.ball.x = player2 ? 800 : 200;
-            _game.ball.y = 400;
+            _game.ball.setX(player2 ? 800 : 200);
+            _game.ball.setY(400);
             _game.ball.vX = 0;
             _game.ball.vY = 0;
         }
@@ -405,9 +476,9 @@
             _game.ball.draw(_game.canvas);
         }
 
-
         function processKeyDown(e)
         {
+            console.log("Keydown: " + new Date());
             e.stopPropagation();
             switch(e.keyCode)
             {
@@ -415,36 +486,34 @@
                     break;
 
                 case KEYA:
-                    _game.player1.vX = _game.player1.super ? -16 : -8;
+                    _game.player1Keys["left"]=true;
+                    _game.player1Keys["right"]=false;
                     break;
 
                 case KEYD:
-                    _game.player1.vX = _game.player1.super ? 16 : 8;
+                    _game.player1Keys["right"]=true;
+                    _game.player1Keys["left"]=false;
                     break;
 
                 case KEYW:
-                    if(_game.player1.y == 0)
-                    {
-                        _game.player1.vY = _game.player1.super ? 45 : 31;
-                    }
+                    _game.player1Keys["up"]=true;
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    _game.player2.vX = _game.player2.super ? -16 : -8;
+                    _game.player2Keys["left"]=true;
+                    _game.player2Keys["right"]=false;
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    _game.player2.vX = _game.player2.super ? 16 : 8;
+                    _game.player2Keys["right"]=true;
+                    _game.player2Keys["left"]=false;
                     break;
 
                 case UP:
                 case KEYI:
-                    if(_game.player2.y == 0)
-                    {
-                        _game.player2.vY = _game.player2.super ? 45 : 31;
-                    }
+                    _game.player2Keys["up"]=true;
                     break;
 
                 case KEYS:
@@ -482,8 +551,50 @@
             }
         }
 
+
+        function processKeyData()
+        {
+            // player1 left/right
+            if (_game.player1Keys.left)
+            {
+                _game.player1.vX = _game.player1.super ? -16 : -8;
+            }
+            else if (_game.player1Keys.right)
+            {
+                _game.player1.vX = _game.player1.super ? 16 : 8;
+            }
+            else
+            {
+                _game.player1.vX = 0;
+            }
+            // player1 jump
+            if (_game.player1Keys.up && _game.player1.y == 0)
+            {
+                _game.player1.vY = _game.player1.super ? 45 : 31;
+            }
+            // player2 left/right
+            if (_game.player2Keys.left)
+            {
+                _game.player2.vX = _game.player2.super ? -16 : -8;
+            }
+            else if (_game.player2Keys.right)
+            {
+                _game.player2.vX = _game.player2.super ? 16 : 8;
+            }
+            else
+            {
+                _game.player2.vX = 0;
+            }
+            // player2 jump
+            if (_game.player2Keys.up && _game.player2.y == 0)
+            {
+                _game.player2.vY = _game.player2.super ? 45 : 31;
+            }
+        }
+
         function processKeyUp(e)
         {
+            console.log("Keydown: " + new Date());
             e.stopPropagation();
             switch(e.keyCode)
             {
@@ -491,34 +602,32 @@
                     break;
 
                 case KEYA:
-                    if(_game.player1.vX < 0)
-                    {
-                        _game.player1.vX = 0;
-                    }
+                    _game.player1Keys["left"]=false;
                     break;
 
                 case KEYD:
-                    if(_game.player1.vX > 0)
-                    {
-                        _game.player1.vX = 0;
-                    }
+                    _game.player1Keys["right"]=false;
+                    break;
+
+                case KEYW:
+                    _game.player1Keys["up"]=false;
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    if(_game.player2.vX < 0)
-                    {
-                        _game.player2.vX = 0;
-                    }
+                    _game.player2Keys["left"]=false;
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    if(_game.player2.vX > 0)
-                    {
-                        _game.player2.vX = 0;
-                    }
+                    _game.player2Keys["right"]=false;
                     break;
+
+                case UP:
+                case KEYI:
+                    _game.player2Keys["up"]=false;
+                    break;
+
             }
         }
 
@@ -531,6 +640,7 @@
         /* Add event handlers */
         document.addEventListener("keydown", processKeyDown, true);
         document.addEventListener("keyup", processKeyUp, true);
+
 
         startMatch();
 
@@ -558,6 +668,8 @@
 
             var matchTime = 0;
 
+            drawingThread();
+
             startRally(false);
 
             function startRally(player2Serves)
@@ -577,6 +689,15 @@
                 _game.canChangeColor = true;
                 startTime = new Date().getTime();
                 updateRally();
+            }
+
+            function drawingThread()
+            {
+                updateSlimers();
+                clear();
+                draw();
+                drawStatus(nPointsScored, matchTime);
+                requestAnimationFrame(drawingThread);
             }
 
             function updateRally()
@@ -646,57 +767,66 @@
                 }
                 else
                 {
-                    clear();
-                    updateSlimers();
+                    processKeyData();
                     moveSlimers();
                     moveBall();
-                    draw();
-                    drawStatus(nPointsScored, matchTime);
-                    requestAnimationFrame(updateRally);
+                    requestAnimationFrame(function() {
+                        setTimeout(updateRally, 1000/50 - 1000/60);
+                    });
                     //setTimeout(updateRally, 20);
                 }
             }
 
             function moveSlimers()
             {
-                _game.player1.x += _game.player1.vX;
-                if (_game.player1.x < 50)
+                var player1X = _game.player1.x;
+                var player1Y = _game.player1.y;
+                var player2X = _game.player2.x;
+                var player2Y = _game.player2.y;
+                
+                player1X += _game.player1.vX * TIMING_MULTIPLIER;
+                if (player1X < SLIME_RADIUS)
                 {
-                    _game.player1.x = 50;
+                    player1X = SLIME_RADIUS;
                 }
-                if (_game.player1.x > 445)
+                if (player1X > 495 - SLIME_RADIUS)
                 {
-                    _game.player1.x = 445;
+                    player1X = 495 - SLIME_RADIUS;
                 }
                 if (_game.player1.vY != 0)
                 {
-                    _game.player1.vY -= _game.player1.super ? 4 : 2;
-                    _game.player1.y += _game.player1.vY * TIMING_MULTIPLIER;
-                    if (_game.player1.y < 0)
+                    _game.player1.vY -= _game.player1.super ? 4 * TIMING_MULTIPLIER : 2 * TIMING_MULTIPLIER;
+                    player1Y += _game.player1.vY * TIMING_MULTIPLIER;
+                    if (player1Y < 0)
                     {
-                        _game.player1.y = 0;
+                        player1Y = 0;
                         _game.player1.vY = 0;
                     }
                 }
-                _game.player2.x += _game.player2.vX;
-                if (_game.player2.x > 950)
+                player2X += _game.player2.vX * TIMING_MULTIPLIER;
+                if (player2X > WIDTH - SLIME_RADIUS)
                 {
-                    _game.player2.x = 950;
+                    player2X = WIDTH - SLIME_RADIUS;
                 }
-                if (_game.player2.x < 555)
+                if (player2X < 505 + SLIME_RADIUS)
                 {
-                    _game.player2.x = 555;
+                    player2X = 505 + SLIME_RADIUS;
                 }
                 if (_game.player2.vY != 0)
                 {
-                    _game.player2.vY -= _game.player2.super ? 4 : 2;
-                    _game.player2.y += _game.player2.vY * TIMING_MULTIPLIER;
-                    if (_game.player2.y < 0)
+                    _game.player2.vY -= _game.player2.super ? 4 * TIMING_MULTIPLIER : 2 * TIMING_MULTIPLIER;
+                    player2Y += _game.player2.vY * TIMING_MULTIPLIER;
+                    if (player2Y < 0)
                     {
-                        _game.player2.y = 0;
+                        player2Y = 0;
                         _game.player2.vY = 0;
                     }
                 }
+
+                _game.player1.setX(player1X);
+                _game.player1.setY(player1Y);
+                _game.player2.setX(player2X);
+                _game.player2.setY(player2Y);
             }
 
 
@@ -707,12 +837,14 @@
                 var maxYV = 22; // was 22
 
                 // move the ball
-                _game.ball.y += --_game.ball.vY * TIMING_MULTIPLIER;
-                _game.ball.x += _game.ball.vX * TIMING_MULTIPLIER;
+                var ballY = _game.ball.y;
+                var ballX = _game.ball.x;
+                ballY += --_game.ball.vY * TIMING_MULTIPLIER;
+                ballX += _game.ball.vX * TIMING_MULTIPLIER;
 
                 // collision detection
-                var dx = 2 * (_game.ball.x - _game.player1.x);
-                var dy = _game.ball.y - _game.player1.y;
+                var dx = 2 * (ballX - _game.player1.x);
+                var dy = ballY - _game.player1.y;
                 var dist = Math.sqrt(dx * dx + dy * dy);
                 var dvx = _game.ball.vX - _game.player1.vX;
                 var dvy = _game.ball.vY - _game.player1.vY;
@@ -722,12 +854,12 @@
                      dynamics and i can't remember any equation with x*x'+y*y' in it...
                      it was a long time ago! - wedgey */
                     var something = (dx * dvx + dy * dvy) / dist;
-                    _game.ball.x = _game.player1.x + (_game.player1.diameter + BALL_RADIUS) / 2 * dx / dist;
-                    _game.ball.y = _game.player1.y + (_game.player1.diameter + BALL_RADIUS) * dy / dist;
+                    ballX = _game.player1.x + (_game.player1.diameter + BALL_RADIUS) / 2 * dx / dist;
+                    ballY = _game.player1.y + (_game.player1.diameter + BALL_RADIUS) * dy / dist;
                     // cap the velocity
                     if (something <= 0)
                     {
-                        _game.ball.vX += _game.player1.vX - 2 * dx * something / dist;
+                        _game.ball.vX += _game.player1.vX - (2 * dx * something / (dist * TIMING_MULTIPLIER));
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -736,7 +868,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player1.vY - 2 * dy * something / dist;
+                        _game.ball.vY += _game.player1.vY - (2 * dy * something / (dist * TIMING_MULTIPLIER));
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
@@ -750,19 +882,19 @@
                 }
 
                 // that stuff all over again, but for p2.
-                dx = 2 * (_game.ball.x - _game.player2.x);
-                dy = _game.ball.y - _game.player2.y;
+                dx = 2 * (ballX - _game.player2.x);
+                dy = ballY - _game.player2.y;
                 dist = Math.sqrt(dx * dx + dy * dy);
                 dvx = _game.ball.vX - _game.player2.vX;
                 dvy = _game.ball.vY - _game.player2.vY;
                 if (dy > 0 && dist < _game.player2.diameter + BALL_RADIUS && dist > FUDGE)
                 {
                     var something = (dx * dvx + dy * dvy) / dist;
-                    _game.ball.x = _game.player2.x + (_game.player2.diameter + BALL_RADIUS) / 2 * dx / dist;
-                    _game.ball.y = _game.player2.y + (_game.player2.diameter + BALL_RADIUS) * dy / dist;
+                    ballX = _game.player2.x + (_game.player2.diameter + BALL_RADIUS) / 2 * dx / dist;
+                    ballY = _game.player2.y + (_game.player2.diameter + BALL_RADIUS) * dy / dist;
                     if (something <= 0)
                     {
-                        _game.ball.vX += _game.player2.vX - 2 * dx * something / dist;
+                        _game.ball.vX += _game.player2.vX - (2 * dx * something / (dist * TIMING_MULTIPLIER));
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -771,7 +903,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player2.vY - 2 * dy * something / dist;
+                        _game.ball.vY += _game.player2.vY - (2 * dy * something / (dist * TIMING_MULTIPLIER));
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
@@ -784,37 +916,40 @@
                     fP2Touched = true;
                 }
                 // hits left wall
-                if (_game.ball.x < 15)
+                if (ballX < 15)
                 {
-                    _game.ball.x = 15;
+                    ballX = 15;
                     _game.ball.vX = -_game.ball.vX;
                 }
                 // hits right wall
-                if (_game.ball.x > 985)
+                if (ballX > 985)
                 {
-                    _game.ball.x = 985;
+                    ballX = 985;
                     _game.ball.vX = -_game.ball.vX;
                 }
                 // hits the post
-                if (_game.ball.x > 480 && _game.ball.x < 520 && _game.ball.y < 140)
+                if (ballX > 480 && ballX < 520 && ballY < 140)
                 {
                     // bounces off top of net
-                    if (_game.ball.vY < 0 && _game.ball.y > 130)
+                    if (_game.ball.vY < 0 && ballY > 130)
                     {
                         _game.ball.vY *= -1;
-                        _game.ball.y = 130;
+                        ballY = 130;
                     }
-                    else if (_game.ball.x < 500)
+                    else if (ballX < 500)
                     { // hits side of net
-                        _game.ball.x = 480;
+                        ballX = 480;
                         _game.ball.vX = _game.ball.vX >= 0 ? -_game.ball.vX : _game.ball.vX;
                     }
                     else
                     {
-                        _game.ball.x = 520;
+                        ballX = 520;
                         _game.ball.vX = _game.ball.vX <= 0 ? -_game.ball.vX : _game.ball.vX;
                     }
                 }
+
+                _game.ball.setX(ballX);
+                _game.ball.setY(ballY);
             }
 
 
