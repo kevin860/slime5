@@ -2,27 +2,23 @@
  * @copyright Created by Kevin Campbell based on code from Slime Volleyball 2 Player from Quin Pendragon
  *
  */
+
+
+
+/* Virtual width/height */
+/**@const*/ var WIDTH = 1000;
+/**@const*/ var HEIGHT = 1000;
+
 (function(window, document){
 
     /* For debugging */
     /**@const*/ var SHOW_RECT=false;
-
-    /**@const*/ var BALL_RADIUS = 25; // 25
-    /**@const*/ var SLIME_RADIUS = 50; // 50
-    /**@const*/ var FUDGE = 5; // 5
-    /**@const*/ var TIMING_MULTIPLIER = 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
-
-    /**@const*/ var SCORING_RUN_FOR_SUPER = 3;
 
     /**@const*/ var SLIME_COLORS = ["red", "green", "yellow", "white", "black", "cyan"];
     /**@const*/ var SLIME_NAMES = ["Big Red Slime ", "Magic Green Slime ", "Golden Boy ", "The Great White Slime ", "The Grass Tree\251 ", "Cyanatron "];
     /**@const*/ var BALL_COLOR = "yellow";
     /**@const*/ var COURT_COLOR = "grey";
     /**@const*/ var NET_COLOR = "white";
-
-    /* Virtual width/height */
-    /**@const*/ var WIDTH = 1000;
-    /**@const*/ var HEIGHT = 1000;
 
     /**@const*/ var LEFT = 37;
     /**@const*/ var KEYJ = 74;
@@ -38,6 +34,14 @@
     /**@const*/ var KEYS = 83;
     /**@const*/ var KEYW = 87;
 
+    /**@const*/ var FUDGE = 5; // 5
+
+
+    var ball_radius = 25; // 25
+    var slime_radius = 50; // 50
+    var timing_multiplier = 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
+    var battle_mode = true; // false
+    var scoring_run_for_super = 3;
 
 
     var rob = new Image();
@@ -51,9 +55,16 @@
      * A player (slime)
      * @param color
      * @constructor
+     * @param name
+     * @param radius
+     * @param name
+     * @param radius
+     * @param looksRight
      */
-    function Player(color, name)
+    function Player(color, name, radius, looksRight)
     {
+        var _this = this;
+
         this.color = color;
         this.name = name;
         this.x = 0;
@@ -61,35 +72,34 @@
         this.previousX = 0;
         this.previousY = 0;
         this.super = false;
-        this.radius = SLIME_RADIUS;
-        this.diameter = this.radius * 2;
+        this.blinkCount =  0;
+        this.looksRight = looksRight;
 
-        this.setRadius = function(radius)
-        {
-            this.radius = radius;
-            this.diameter = radius * 2;
-        };
+        this.radius = radius;
 
         /**
          * Draw the player on the screen
          * @param canvas HTMLCanvasElement
+         * @param ball Ball The ball (used to determine pupil location)
          */
-        this.draw = function(canvas)
+        this.draw = function(canvas, ball)
         {
-            var xPix = this.x * canvas.width/WIDTH;
-            var yPix = ((4 * HEIGHT / 5) - this.y) * canvas.height/HEIGHT;
-            var rPix = this.radius * canvas.width/WIDTH;
+            var xPix = _this.x * canvas.width/WIDTH;
+            var yPix = ((4 * HEIGHT / 5) - _this.y) * canvas.height/HEIGHT;
+            var rPix = _this.radius * canvas.width/WIDTH;
 
             var c = canvas.getContext('2d');
-            if (!this.super)
+
+            // Draw slimer
+            if (!_this.super)
             {
-                if (this.color && this.color.indexOf("img") == 0)
+                if (_this.color && this.color.indexOf("img") == 0)
                 {
                     c.fillStyle = c.createPattern(rob, 'no-repeat');
                 }
                 else
                 {
-                    c.fillStyle = this.color;
+                    c.fillStyle = _this.color;
                 }
             }
             else
@@ -99,6 +109,68 @@
             c.beginPath();
             c.arc(xPix, yPix, rPix, Math.PI, 0);
             c.fill();
+
+            // Draw eye unless blinking
+            if (_this.blinkCount !== 0)
+            {
+                _this.blinkCount--;
+            }
+            else
+            {
+                // Start a blink?
+                if (Math.random() < 0.005)
+                {
+                    _this.blinkCount = 5 * timing_multiplier;
+                }
+
+                // Calculate ball's relative position (used for pupils)
+                var ballXPix = ball.x * canvas.width/WIDTH;
+                var ballYPix = ball.y * canvas.height/HEIGHT;
+                var ballXDistance = xPix - ballXPix;
+                var ballYDistance = yPix - ballYPix;
+                var ballDistance = Math.floor(Math.sqrt(ballXDistance * ballXDistance + ballYDistance * ballYDistance));
+
+                // Draw eye
+                c.fillStyle = _this.super ? "red" : "white";
+                var eyeRPix = canvas.width  / 100;
+                var eyeXPix = xPix;
+                if (_this.looksRight)
+                {
+                    eyeXPix += eyeRPix * 2.5;
+                }
+                else
+                {
+                    eyeXPix -= eyeRPix * 2.5;
+                }
+                var eyeYPix = yPix - eyeRPix * 2.5;
+                c.beginPath();
+                c.arc(eyeXPix, eyeYPix, eyeRPix, 0, Math.PI * 2);
+                c.fill();
+
+                // Draw pupil
+                if (ballDistance > 0)
+                {
+                    c.fillStyle = "black";
+                    c.beginPath();
+                    var pupilXPix = eyeXPix;
+                    var pupilYPix = eyeYPix;
+                    if (_this.looksRight)
+                    {
+                        pupilXPix -= 4 * ballXDistance / ballDistance;
+                        pupilYPix -= (4 * ballYDistance) / ballDistance
+                    }
+                    else
+                    {
+                        pupilXPix -= 4 * ballXDistance / ballDistance;
+                        pupilYPix -= (4 * ballYDistance) / ballDistance;
+                    }
+                    c.arc(pupilXPix,
+                        pupilYPix,
+                        eyeRPix / 2, 0, Math.PI * 2
+                    );
+                    c.fill();
+                }
+            }
         };
 
         /**
@@ -107,11 +179,11 @@
          */
         this.clear = function(canvas)
         {
-            var rPix = this.radius * canvas.width/WIDTH;
-            var xPix = (this.previousX - this.radius) * canvas.width/WIDTH - 1;
-            var yPix = ((4 * HEIGHT / 5) - this.previousY) * canvas.height/HEIGHT - rPix - 1;
-            var wPix = this.diameter * canvas.width/WIDTH + 2;
-            var hPix = this.radius * canvas.width/WIDTH + 1 + (this.previousY > 0 ? 1 : 0);
+            var rPix = _this.radius * canvas.width/WIDTH;
+            var xPix = (_this.previousX - _this.radius) * canvas.width/WIDTH - 1;
+            var yPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height/HEIGHT - rPix - 1;
+            var wPix = _this.radius * 2 * canvas.width/WIDTH + 2;
+            var hPix = _this.radius * canvas.width/WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -122,6 +194,8 @@
                 c.strokeStyle = "cyan";
                 c.strokeRect(xPix, yPix, wPix, hPix);
             }
+            _this.previousX=_this.x;
+            _this.previousY=_this.y;
         };
 
         /**
@@ -130,8 +204,7 @@
          */
         this.setX = function(newX)
         {
-            this.previousX=this.x;
-            this.x=newX;
+            _this.x=newX;
         };
 
         /**
@@ -140,8 +213,7 @@
          */
         this.setY = function(newY)
         {
-            this.previousY=this.y;
-            this.y=newY;
+            _this.y=newY;
         };
     }
 
@@ -149,14 +221,17 @@
      * The ball (of type volley)
      * @constructor
      */
-    function Ball()
+    function Ball(radius)
     {
+        var _this = this;
+
         this.x = 0;
         this.y = 0;
         this.previousX = 0;
         this.previousY = 0;
         this.vX = 0;
         this.vY = 0;
+        this.radius = radius;
 
         /**
          * Draw the ball on the screen
@@ -164,7 +239,7 @@
          */
         this.draw = function(canvas)
         {
-            var ballRadPix = (BALL_RADIUS + FUDGE) * canvas.height/HEIGHT;
+            var ballRadPix = (_this.radius + FUDGE) * canvas.height/HEIGHT;
             var ballXPix = this.x * canvas.width/WIDTH;
             var ballYPix = ((4 * HEIGHT / 5) - this.y) * canvas.height/HEIGHT;
 
@@ -181,10 +256,10 @@
          */
         this.clear = function(canvas)
         {
-            var ballRadPix = (BALL_RADIUS + FUDGE) * canvas.height/HEIGHT;
+            var ballRadPix = (_this.radius + FUDGE) * canvas.height/HEIGHT;
             var ballDPix = ballRadPix * 2 + 2;
-            var ballXPix = this.previousX * canvas.width/WIDTH - ballRadPix - 1;
-            var ballYPix = ((4 * HEIGHT / 5) - this.previousY) * canvas.height/HEIGHT - ballRadPix - 1;
+            var ballXPix = _this.previousX * canvas.width/WIDTH - ballRadPix - 1;
+            var ballYPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height/HEIGHT - ballRadPix - 1;
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -195,6 +270,9 @@
                 c.strokeStyle = "cyan";
                 c.strokeRect(ballXPix, ballYPix, ballDPix, ballDPix);
             }
+
+            _this.previousX=_this.x;
+            _this.previousY=_this.y;
         };
 
         /**
@@ -203,8 +281,7 @@
          */
         this.setX = function(newX)
         {
-            this.previousX=this.x;
-            this.x=newX;
+            _this.x=newX;
         };
 
         /**
@@ -213,8 +290,7 @@
          */
         this.setY = function(newY)
         {
-            this.previousY=this.y;
-            this.y=newY;
+            _this.y=newY;
         };
     }
 
@@ -224,44 +300,66 @@
      * @param canvas HTMLCanvasElement
      * @constructor
      */
-    function Game(canvas)
+    function Game(canvas, settings)
     {
         this.canvas = canvas;
-
         this.height = canvas.height;
         this.width = canvas.width;
+
         this.commentary = "Click the mouse to play...";
 
         this.courtHeight = this.height / 5;
 
+        var _game = this;
+        applySettings(settings);
+
         this.canChangeColor = false;
         this.player1Character = 0;
         this.player2Character = 1;
-        this.player1 = new Player();
-        this.player2 = new Player();
-        this.ball = new Ball();
+        this.player1 = new Player(SLIME_COLORS[this.player1Character], SLIME_NAMES[this.player1Character], this.slime_radius, true);
+        this.player2 = new Player(SLIME_COLORS[this.player2Character], SLIME_NAMES[this.player2Character], this.slime_radius, false);
+        this.ball = new Ball(this.ball_radius);
         this.nScore = 5;
 
-        this.player1Keys = {
-            "left":false,
-            "right":false,
-            "up":false
-        };
-        this.player2Keys = {
-            "left":false,
-            "right":false,
-            "up":false
-        };
+        function applySettings(settings)
+        {
+            // apply settings
+            _game.ball_radius = settings.ball_radius ? settings.ball_radius : 25;
+            _game.slime_radius = settings.slime_radius ? settings.slime_radius : 50; // 50
+            _game.timing_multiplier = settings.timing_multiplier ? settings.timing_multiplier : 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
+            _game.battle_mode = settings.battle_mode !== undefined ? settings.battle_mode : false; // false
+            _game.scoring_run_for_super = settings.scoring_run_for_super ? settings.scoring_run_for_super : 3;
 
-        var _game = this;
+            _game.player1Keys = {
+                "left":false,
+                "right":false,
+                "up":false
+            };
+            _game.player2Keys = {
+                "left":false,
+                "right":false,
+                "up":false
+            };
+        }
+        this.applySettings = applySettings;
+
+        function restart()
+        {
+            _game.startMatch();
+        }
+        this.restart = restart;
 
         function updateSlimers()
         {
             _game.player1.color = SLIME_COLORS[_game.player1Character];
             _game.player1.name = SLIME_NAMES[_game.player1Character];
+            _game.player1.radius = _game.slime_radius;
 
             _game.player2.color = SLIME_COLORS[_game.player2Character];
             _game.player2.name = SLIME_NAMES[_game.player2Character];
+            _game.player2.radius = _game.slime_radius;
+
+            _game.ball.radius = _game.ball_radius;
         }
 
         /**
@@ -409,7 +507,7 @@
             {
                 promptMsg = "What can I say?";
             }
-            else if ((scoringRun < 0 ? - scoringRun:scoringRun) == SCORING_RUN_FOR_SUPER)
+            else if ((scoringRun < 0 ? - scoringRun:scoringRun) == _game.scoring_run_for_super)
             {
                 promptMsg += "is on fire!";
             }
@@ -471,9 +569,11 @@
 
         function draw()
         {
-            _game.player1.draw(_game.canvas);
-            _game.player2.draw(_game.canvas);
+            _game.player1.draw(_game.canvas, _game.ball);
+            _game.player2.draw(_game.canvas, _game.ball);
             _game.ball.draw(_game.canvas);
+            drawNet();
+            drawCourt();
         }
 
         function processKeyDown(e)
@@ -675,13 +775,13 @@
             function startRally(player2Serves)
             {
                 drawPrompt("", 1);
+                resetSlimers();
+                resetBall(player2Serves);
                 clear();
                 drawCourt();
                 drawNet();
                 updateSlimers();
                 drawScores();
-                resetSlimers();
-                resetBall(player2Serves);
                 replayStart = false;
                 replayPos = 0;
                 fP1Touched = false;
@@ -727,12 +827,12 @@
                         scoringRun = -1;
                     }
                     // Anyone super slime?
-                    if (scoringRun <= -SCORING_RUN_FOR_SUPER)
+                    if (scoringRun <= -_game.scoring_run_for_super)
                     {
                         _game.player1.super = true;
                         _game.player2.super = false;
                     }
-                    else if (scoringRun >= SCORING_RUN_FOR_SUPER)
+                    else if (scoringRun >= _game.scoring_run_for_super)
                     {
                         _game.player1.super = false;
                         _game.player2.super = true;
@@ -764,6 +864,20 @@
                         }, 2500);
 
                     }
+                    else
+                    {
+                         var promptMsg = _game.nScore == 0 ? _game.player2.name : _game.player1.name;
+                         promptMsg += " Wins the Game!";
+                         drawPrompt(promptMsg, 1);
+                         drawScores();
+                    //     var gameDoneDraw = function() {
+                    //         requestAnimationFrame(function() {
+                    //         setTimeout(gameDoneDraw, 1000/50 - 1000/60);
+                    //     })};
+                    //     requestAnimationFrame(function() {
+                    //         setTimeout(, 1000/50 - 1000/60);
+                    //     });
+                    }
                 }
                 else
                 {
@@ -784,38 +898,74 @@
                 var player2X = _game.player2.x;
                 var player2Y = _game.player2.y;
                 
-                player1X += _game.player1.vX * TIMING_MULTIPLIER;
-                if (player1X < SLIME_RADIUS)
+                player1X += _game.player1.vX * _game.timing_multiplier;
+                if (player1X < _game.slime_radius)
                 {
-                    player1X = SLIME_RADIUS;
+                    player1X = _game.slime_radius;
                 }
-                if (player1X > 495 - SLIME_RADIUS)
+                if (_game.battle_mode)
                 {
-                    player1X = 495 - SLIME_RADIUS;
+                    if (player1X > WIDTH - _game.slime_radius)
+                    {
+                        player1X = WIDTH - _game.slime_radius;
+                    }
+                    else if (player1Y < 50 && player1X > 495 - _game.slime_radius && player1X < 501)
+                    {
+                        player1X = 495 - _game.slime_radius;
+                    }
+                    else if (player1Y < 50 && player1X > 500 && player1X < 505 + _game.slime_radius)
+                    {
+                        player1X = 505 + _game.slime_radius;
+                    }
+                }
+                else
+                {
+                    if (player1X > 495 - _game.slime_radius)
+                    {
+                        player1X = 495 - _game.slime_radius;
+                    }
                 }
                 if (_game.player1.vY != 0)
                 {
-                    _game.player1.vY -= _game.player1.super ? 4 * TIMING_MULTIPLIER : 2 * TIMING_MULTIPLIER;
-                    player1Y += _game.player1.vY * TIMING_MULTIPLIER;
+                    _game.player1.vY -= _game.player1.super ? 4 * _game.timing_multiplier : 2 * _game.timing_multiplier;
+                    player1Y += _game.player1.vY * _game.timing_multiplier;
                     if (player1Y < 0)
                     {
                         player1Y = 0;
                         _game.player1.vY = 0;
                     }
                 }
-                player2X += _game.player2.vX * TIMING_MULTIPLIER;
-                if (player2X > WIDTH - SLIME_RADIUS)
+                player2X += _game.player2.vX * _game.timing_multiplier;
+                if (player2X > WIDTH - _game.slime_radius)
                 {
-                    player2X = WIDTH - SLIME_RADIUS;
+                    player2X = WIDTH - _game.slime_radius;
                 }
-                if (player2X < 505 + SLIME_RADIUS)
+                if (_game.battle_mode)
                 {
-                    player2X = 505 + SLIME_RADIUS;
+                    if (player2X > WIDTH - _game.slime_radius)
+                    {
+                        player2X = WIDTH - _game.slime_radius;
+                    }
+                    else if (player2Y < 50 && player2X < 505 + _game.slime_radius && player2X > 499)
+                    {
+                        player2X = 505 + _game.slime_radius;
+                    }
+                    else if (player2Y < 50 && player2X < 500 && player2X > 495 - _game.slime_radius)
+                    {
+                        player2X = 495 - _game.slime_radius;
+                    }
+                }
+                else
+                {
+                    if (player2X < 505 + _game.slime_radius)
+                    {
+                        player2X = 505 + _game.slime_radius;
+                    }
                 }
                 if (_game.player2.vY != 0)
                 {
-                    _game.player2.vY -= _game.player2.super ? 4 * TIMING_MULTIPLIER : 2 * TIMING_MULTIPLIER;
-                    player2Y += _game.player2.vY * TIMING_MULTIPLIER;
+                    _game.player2.vY -= _game.player2.super ? 4 * _game.timing_multiplier : 2 * _game.timing_multiplier;
+                    player2Y += _game.player2.vY * _game.timing_multiplier;
                     if (player2Y < 0)
                     {
                         player2Y = 0;
@@ -839,8 +989,8 @@
                 // move the ball
                 var ballY = _game.ball.y;
                 var ballX = _game.ball.x;
-                ballY += --_game.ball.vY * TIMING_MULTIPLIER;
-                ballX += _game.ball.vX * TIMING_MULTIPLIER;
+                ballY += --_game.ball.vY * _game.timing_multiplier;
+                ballX += _game.ball.vX * _game.timing_multiplier;
 
                 // collision detection
                 var dx = 2 * (ballX - _game.player1.x);
@@ -848,18 +998,18 @@
                 var dist = Math.sqrt(dx * dx + dy * dy);
                 var dvx = _game.ball.vX - _game.player1.vX;
                 var dvy = _game.ball.vY - _game.player1.vY;
-                if (dy > 0 && dist < _game.player1.diameter + BALL_RADIUS && dist > FUDGE)
+                if (dy > 0 && dist < _game.player1.radius * 2 + _game.ball_radius && dist > FUDGE)
                 {
                     /* i have nfi what this is. i'm supposed to have done engineering
                      dynamics and i can't remember any equation with x*x'+y*y' in it...
                      it was a long time ago! - wedgey */
                     var something = (dx * dvx + dy * dvy) / dist;
-                    ballX = _game.player1.x + (_game.player1.diameter + BALL_RADIUS) / 2 * dx / dist;
-                    ballY = _game.player1.y + (_game.player1.diameter + BALL_RADIUS) * dy / dist;
+                    ballX = _game.player1.x + (_game.player1.radius * 2 + _game.ball_radius) / 2 * dx / dist;
+                    ballY = _game.player1.y + (_game.player1.radius * 2 + _game.ball_radius) * dy / dist;
                     // cap the velocity
                     if (something <= 0)
                     {
-                        _game.ball.vX += _game.player1.vX - (2 * dx * something / (dist * TIMING_MULTIPLIER));
+                        _game.ball.vX += _game.player1.vX - (2 * dx * something / (dist * _game.timing_multiplier));
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -868,7 +1018,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player1.vY - (2 * dy * something / (dist * TIMING_MULTIPLIER));
+                        _game.ball.vY += _game.player1.vY - (2 * dy * something / (dist * _game.timing_multiplier));
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
@@ -887,14 +1037,14 @@
                 dist = Math.sqrt(dx * dx + dy * dy);
                 dvx = _game.ball.vX - _game.player2.vX;
                 dvy = _game.ball.vY - _game.player2.vY;
-                if (dy > 0 && dist < _game.player2.diameter + BALL_RADIUS && dist > FUDGE)
+                if (dy > 0 && dist < _game.player2.radius * 2 + _game.ball_radius && dist > FUDGE)
                 {
                     var something = (dx * dvx + dy * dvy) / dist;
-                    ballX = _game.player2.x + (_game.player2.diameter + BALL_RADIUS) / 2 * dx / dist;
-                    ballY = _game.player2.y + (_game.player2.diameter + BALL_RADIUS) * dy / dist;
+                    ballX = _game.player2.x + (_game.player2.radius * 2 + _game.ball_radius) / 2 * dx / dist;
+                    ballY = _game.player2.y + (_game.player2.radius * 2 + _game.ball_radius) * dy / dist;
                     if (something <= 0)
                     {
-                        _game.ball.vX += _game.player2.vX - (2 * dx * something / (dist * TIMING_MULTIPLIER));
+                        _game.ball.vX += _game.player2.vX - (2 * dx * something / (dist * _game.timing_multiplier));
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -903,7 +1053,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player2.vY - (2 * dy * something / (dist * TIMING_MULTIPLIER));
+                        _game.ball.vY += _game.player2.vY - (2 * dy * something / (dist * _game.timing_multiplier));
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
