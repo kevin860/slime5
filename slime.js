@@ -861,7 +861,7 @@
 
                         setTimeout(function ()
                         {
-                            if (_game.mousePressed)
+                            if (false)//_game.mousePressed)
                             {
                                 //TODO playReplay
                                 _game.mousePressed = false;
