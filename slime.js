@@ -9,10 +9,11 @@
 /**@const*/ var WIDTH = 1000;
 /**@const*/ var HEIGHT = 1000;
 
-(function(window, document){
+(function (window, document)
+{
 
     /* For debugging */
-    /**@const*/ var SHOW_RECT=false;
+    /**@const*/ var SHOW_RECT = false;
 
     /**@const*/ var SLIME_COLORS = ["red", "green", "yellow", "white", "black", "cyan"];
     /**@const*/ var SLIME_NAMES = ["Big Red Slime ", "Magic Green Slime ", "Golden Boy ", "The Great White Slime ", "The Grass Tree\251 ", "Cyanatron "];
@@ -36,20 +37,19 @@
 
     /**@const*/ var FUDGE = 5; // 5
 
-
     var ball_radius = 25; // 25
     var slime_radius = 50; // 50
     var timing_multiplier = 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
     var battle_mode = true; // false
     var scoring_run_for_super = 3;
 
-
     var rob = new Image();
-    rob.addEventListener('load', function(e){
+    rob.addEventListener('load', function (e)
+    {
         SLIME_COLORS.push("imgRob");
         SLIME_NAMES.push("Rob ");
     });
-    rob.src="robslime_360.png";
+    rob.src = "robslime_360.png";
 
     /**
      * A player (slime)
@@ -72,7 +72,7 @@
         this.previousX = 0;
         this.previousY = 0;
         this.super = false;
-        this.blinkCount =  0;
+        this.blinkCount = 0;
         this.looksRight = looksRight;
 
         this.radius = radius;
@@ -82,11 +82,11 @@
          * @param canvas HTMLCanvasElement
          * @param ball Ball The ball (used to determine pupil location)
          */
-        this.draw = function(canvas, ball)
+        this.draw = function (canvas, ball)
         {
-            var xPix = _this.x * canvas.width/WIDTH;
-            var yPix = ((4 * HEIGHT / 5) - _this.y) * canvas.height/HEIGHT;
-            var rPix = _this.radius * canvas.width/WIDTH;
+            var xPix = _this.x * canvas.width / WIDTH;
+            var yPix = ((4 * HEIGHT / 5) - _this.y) * canvas.height / HEIGHT;
+            var rPix = _this.radius * canvas.width / WIDTH;
 
             var c = canvas.getContext('2d');
 
@@ -124,15 +124,15 @@
                 }
 
                 // Calculate ball's relative position (used for pupils)
-                var ballXPix = ball.x * canvas.width/WIDTH;
-                var ballYPix = ball.y * canvas.height/HEIGHT;
+                var ballXPix = ball.x * canvas.width / WIDTH;
+                var ballYPix = ball.y * canvas.height / HEIGHT;
                 var ballXDistance = xPix - ballXPix;
                 var ballYDistance = yPix - ballYPix;
                 var ballDistance = Math.floor(Math.sqrt(ballXDistance * ballXDistance + ballYDistance * ballYDistance));
 
                 // Draw eye
                 c.fillStyle = _this.super ? "red" : "white";
-                var eyeRPix = canvas.width  / 100;
+                var eyeRPix = canvas.width / 100;
                 var eyeXPix = xPix;
                 if (_this.looksRight)
                 {
@@ -177,13 +177,13 @@
          * Clear the player on the screen
          * @param canvas HTMLCanvasElement
          */
-        this.clear = function(canvas)
+        this.clear = function (canvas)
         {
-            var rPix = _this.radius * canvas.width/WIDTH;
-            var xPix = (_this.previousX - _this.radius) * canvas.width/WIDTH - 1;
-            var yPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height/HEIGHT - rPix - 1;
-            var wPix = _this.radius * 2 * canvas.width/WIDTH + 2;
-            var hPix = _this.radius * canvas.width/WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
+            var rPix = _this.radius * canvas.width / WIDTH;
+            var xPix = (_this.previousX - _this.radius) * canvas.width / WIDTH - 1;
+            var yPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height / HEIGHT - rPix - 1;
+            var wPix = _this.radius * 2 * canvas.width / WIDTH + 2;
+            var hPix = _this.radius * canvas.width / WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -194,26 +194,26 @@
                 c.strokeStyle = "cyan";
                 c.strokeRect(xPix, yPix, wPix, hPix);
             }
-            _this.previousX=_this.x;
-            _this.previousY=_this.y;
+            _this.previousX = _this.x;
+            _this.previousY = _this.y;
         };
 
         /**
          * Moves the player to a new horizontal position
          * @param newX new horizontal position
          */
-        this.setX = function(newX)
+        this.setX = function (newX)
         {
-            _this.x=newX;
+            _this.x = newX;
         };
 
         /**
          * Moves the player to a new horizontal position
          * @param newY new horizontal position
          */
-        this.setY = function(newY)
+        this.setY = function (newY)
         {
-            _this.y=newY;
+            _this.y = newY;
         };
     }
 
@@ -237,11 +237,11 @@
          * Draw the ball on the screen
          * @param canvas HTMLCanvasElement
          */
-        this.draw = function(canvas)
+        this.draw = function (canvas)
         {
-            var ballRadPix = (_this.radius + FUDGE) * canvas.height/HEIGHT;
-            var ballXPix = this.x * canvas.width/WIDTH;
-            var ballYPix = ((4 * HEIGHT / 5) - this.y) * canvas.height/HEIGHT;
+            var ballRadPix = (_this.radius + FUDGE) * canvas.height / HEIGHT;
+            var ballXPix = this.x * canvas.width / WIDTH;
+            var ballYPix = ((4 * HEIGHT / 5) - this.y) * canvas.height / HEIGHT;
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -254,12 +254,12 @@
          * Clear the ball on the screen
          * @param canvas HTMLCanvasElement
          */
-        this.clear = function(canvas)
+        this.clear = function (canvas)
         {
-            var ballRadPix = (_this.radius + FUDGE) * canvas.height/HEIGHT;
+            var ballRadPix = (_this.radius + FUDGE) * canvas.height / HEIGHT;
             var ballDPix = ballRadPix * 2 + 2;
-            var ballXPix = _this.previousX * canvas.width/WIDTH - ballRadPix - 1;
-            var ballYPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height/HEIGHT - ballRadPix - 1;
+            var ballXPix = _this.previousX * canvas.width / WIDTH - ballRadPix - 1;
+            var ballYPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height / HEIGHT - ballRadPix - 1;
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -271,26 +271,26 @@
                 c.strokeRect(ballXPix, ballYPix, ballDPix, ballDPix);
             }
 
-            _this.previousX=_this.x;
-            _this.previousY=_this.y;
+            _this.previousX = _this.x;
+            _this.previousY = _this.y;
         };
 
         /**
          * Moves the ball to a new horizontal position
          * @param newX new horizontal position
          */
-        this.setX = function(newX)
+        this.setX = function (newX)
         {
-            _this.x=newX;
+            _this.x = newX;
         };
 
         /**
          * Moves the ball to a new horizontal position
          * @param newY new horizontal position
          */
-        this.setY = function(newY)
+        this.setY = function (newY)
         {
-            _this.y=newY;
+            _this.y = newY;
         };
     }
 
@@ -298,6 +298,7 @@
      * The core game
      *
      * @param canvas HTMLCanvasElement
+     * @param settings Object containing settings
      * @constructor
      */
     function Game(canvas, settings)
@@ -306,20 +307,36 @@
         this.height = canvas.height;
         this.width = canvas.width;
 
-        this.commentary = "Click the mouse to play...";
-
         this.courtHeight = this.height / 5;
 
         var _game = this;
         applySettings(settings);
 
-        this.canChangeColor = false;
-        this.player1Character = 0;
-        this.player2Character = 1;
-        this.player1 = new Player(SLIME_COLORS[this.player1Character], SLIME_NAMES[this.player1Character], this.slime_radius, true);
-        this.player2 = new Player(SLIME_COLORS[this.player2Character], SLIME_NAMES[this.player2Character], this.slime_radius, false);
-        this.ball = new Ball(this.ball_radius);
-        this.nScore = 5;
+        _game.commentary = ["", ""];
+
+        _game.canChangeColor = false;
+        _game.player1 = new Player(SLIME_COLORS[_game.player1Character], SLIME_NAMES[_game.player1Character], _game.slime_radius, true);
+        _game.player2 = new Player(SLIME_COLORS[_game.player2Character], SLIME_NAMES[_game.player2Character], _game.slime_radius, false);
+        _game.ball = new Ball(_game.ball_radius);
+
+        function startMatch()
+        {
+            _game.player1Character = 0;
+            _game.player2Character = 1;
+            _game.player1.super = false;
+            _game.player2.super = false;
+            _game.nScore = 5;
+
+            _game.scoringRun = 0;
+            _game.fP1Touched = false;
+            _game.fP2Touched = false;
+            _game.nPointsScored = 0;
+            _game.startTime = null;
+            _game.nScore = 5;
+            _game.fInPlay = false;
+
+            _game.matchTime = 0;
+        }
 
         function applySettings(settings)
         {
@@ -331,23 +348,18 @@
             _game.scoring_run_for_super = settings.scoring_run_for_super ? settings.scoring_run_for_super : 3;
 
             _game.player1Keys = {
-                "left":false,
-                "right":false,
-                "up":false
+                "left": false,
+                "right": false,
+                "up": false
             };
             _game.player2Keys = {
-                "left":false,
-                "right":false,
-                "up":false
+                "left": false,
+                "right": false,
+                "up": false
             };
         }
-        this.applySettings = applySettings;
 
-        function restart()
-        {
-            _game.startMatch();
-        }
-        this.restart = restart;
+        this.applySettings = applySettings;
 
         function updateSlimers()
         {
@@ -360,6 +372,12 @@
             _game.player2.radius = _game.slime_radius;
 
             _game.ball.radius = _game.ball_radius;
+        }
+
+        function setCommentary(first, second)
+        {
+            _game.commentary[0] = first ? first : "";
+            _game.commentary[1] = second ? second : "";
         }
 
         /**
@@ -383,20 +401,17 @@
             c.fill();
         }
 
-        function drawPrompt(promptMsg, i)
+        function drawPrompt()
         {
             var c = _game.canvas.getContext('2d');
-            if (promptMsg.length > 0)
+            var empty = _game.commentary[0].length == 0 && _game.commentary[1].length == 0;
+            if (!empty)
             {
                 c.font = '14px Helvetica';
                 c.fillStyle = "lightgrey";
                 c.textAlign = 'center';
-                c.fillText(promptMsg, _game.canvas.width / 2, (_game.canvas.height * 4) / 5 + 20 * (i + 1) + 10);
-            }
-            else
-            {
-                drawCourt();
-                drawNet();
+                c.fillText(_game.commentary[0], _game.canvas.width / 2, (_game.canvas.height * 4) / 5 + 20 + 10);
+                c.fillText(_game.commentary[1], _game.canvas.width / 2, (_game.canvas.height * 4) / 5 + 40 + 10);
             }
 
         }
@@ -408,7 +423,7 @@
             c.clearRect(0, 0, _game.canvas.width, k * 2 + 22);
 
             var l, i;
-            for(l = 0; l < _game.nScore; l++)
+            for (l = 0; l < _game.nScore; l++)
             {
                 i = ((l + 1) * _game.canvas.width) / 24;
                 c.beginPath();
@@ -419,7 +434,7 @@
                 c.stroke();
             }
 
-            for(l = 0; l < 10 - _game.nScore; l++)
+            for (l = 0; l < 10 - _game.nScore; l++)
             {
                 i = _game.canvas.width - (((l + 1) * _game.canvas.width) / 24);
                 c.beginPath();
@@ -503,19 +518,19 @@
         function getCommentary(fP1Touched, fP2Touched, nScore, nPointsScored, scoringRun)
         {
             var promptMsg = _game.ball.x <= 500 ? _game.player2.name : _game.player1.name;
-            if(!fP1Touched && !fP2Touched)
+            if (!fP1Touched && !fP2Touched)
             {
                 promptMsg = "What can I say?";
             }
-            else if ((scoringRun < 0 ? - scoringRun:scoringRun) == _game.scoring_run_for_super)
+            else if ((scoringRun < 0 ? -scoringRun : scoringRun) == _game.scoring_run_for_super)
             {
                 promptMsg += "is on fire!";
             }
-            else if(_game.ball.x > 500 && fP1Touched && !fP2Touched || _game.ball.x <= 500 && !fP1Touched && fP2Touched)
+            else if (_game.ball.x > 500 && fP1Touched && !fP2Touched || _game.ball.x <= 500 && !fP1Touched && fP2Touched)
             {
                 promptMsg += "aces the serve!";
             }
-            else if(_game.ball.x > 500 && !fP1Touched && fP2Touched || _game.ball.x <= 500 && fP1Touched && !fP2Touched)
+            else if (_game.ball.x > 500 && !fP1Touched && fP2Touched || _game.ball.x <= 500 && fP1Touched && !fP2Touched)
             {
                 promptMsg += "dies laughing! :P";
             }
@@ -566,7 +581,6 @@
             _game.ball.clear(_game.canvas);
         }
 
-
         function draw()
         {
             _game.player1.draw(_game.canvas, _game.ball);
@@ -574,50 +588,50 @@
             _game.ball.draw(_game.canvas);
             drawNet();
             drawCourt();
+            drawPrompt();
         }
 
         function processKeyDown(e)
         {
-            console.log("Keydown: " + new Date());
             e.stopPropagation();
-            switch(e.keyCode)
+            switch (e.keyCode)
             {
                 default:
                     break;
 
                 case KEYA:
-                    _game.player1Keys["left"]=true;
-                    _game.player1Keys["right"]=false;
+                    _game.player1Keys["left"] = true;
+                    _game.player1Keys["right"] = false;
                     break;
 
                 case KEYD:
-                    _game.player1Keys["right"]=true;
-                    _game.player1Keys["left"]=false;
+                    _game.player1Keys["right"] = true;
+                    _game.player1Keys["left"] = false;
                     break;
 
                 case KEYW:
-                    _game.player1Keys["up"]=true;
+                    _game.player1Keys["up"] = true;
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    _game.player2Keys["left"]=true;
-                    _game.player2Keys["right"]=false;
+                    _game.player2Keys["left"] = true;
+                    _game.player2Keys["right"] = false;
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    _game.player2Keys["right"]=true;
-                    _game.player2Keys["left"]=false;
+                    _game.player2Keys["right"] = true;
+                    _game.player2Keys["left"] = false;
                     break;
 
                 case UP:
                 case KEYI:
-                    _game.player2Keys["up"]=true;
+                    _game.player2Keys["up"] = true;
                     break;
 
                 case KEYS:
-                    if(!_game.canChangeColor)
+                    if (!_game.canChangeColor)
                     {
                         break;
                     }
@@ -625,14 +639,14 @@
                     {
                         _game.player1Character = (_game.player1Character < SLIME_NAMES.length - 1) ? (_game.player1Character + 1) : 0;
                     }
-                    while(_game.player1Character == _game.player2Character);
+                    while (_game.player1Character == _game.player2Character);
                     updateSlimers();
                     drawScores();
                     break;
 
                 case DOWN:
                 case KEYK:
-                    if(!_game.canChangeColor)
+                    if (!_game.canChangeColor)
                     {
                         break;
                     }
@@ -640,17 +654,15 @@
                     {
                         _game.player2Character = (_game.player2Character < SLIME_NAMES.length - 1) ? (_game.player2Character + 1) : 0;
                     }
-                    while(_game.player2Character == _game.player1Character);
+                    while (_game.player2Character == _game.player1Character);
                     updateSlimers();
                     drawScores();
                     break;
-                //
-                //case ' ':
-                //    mousePressed = true;
-                //    break;
+                case ' ':
+                    _game.mousePressed = true;
+                    break;
             }
         }
-
 
         function processKeyData()
         {
@@ -694,44 +706,48 @@
 
         function processKeyUp(e)
         {
-            console.log("Keydown: " + new Date());
+            //console.log("Keydown: " + new Date());
             e.stopPropagation();
-            switch(e.keyCode)
+            switch (e.keyCode)
             {
                 default:
                     break;
 
                 case KEYA:
-                    _game.player1Keys["left"]=false;
+                    _game.player1Keys["left"] = false;
                     break;
 
                 case KEYD:
-                    _game.player1Keys["right"]=false;
+                    _game.player1Keys["right"] = false;
                     break;
 
                 case KEYW:
-                    _game.player1Keys["up"]=false;
+                    _game.player1Keys["up"] = false;
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    _game.player2Keys["left"]=false;
+                    _game.player2Keys["left"] = false;
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    _game.player2Keys["right"]=false;
+                    _game.player2Keys["right"] = false;
                     break;
 
                 case UP:
                 case KEYI:
-                    _game.player2Keys["up"]=false;
+                    _game.player2Keys["up"] = false;
                     break;
 
             }
         }
 
-
+        function processMouseDown(e)
+        {
+            e.stopPropagation();
+            _game.mousePressed = true;
+        }
 
         /*
          * Game start!
@@ -740,17 +756,20 @@
         /* Add event handlers */
         document.addEventListener("keydown", processKeyDown, true);
         document.addEventListener("keyup", processKeyUp, true);
+        canvas.addEventListener("mousedown", processMouseDown, true);
 
-
-        startMatch();
+        startGame();
 
         /*
          * Main game
          */
-        function startMatch()
+        function startGame()
         {
             var replayPos = 0;
             var replayStart = 0;
+
+            /* Reset the game */
+            startMatch();
 
             /* Reset the slimes! */
             resetSlimers();
@@ -758,23 +777,13 @@
             /* Reset the ball */
             resetBall();
 
-            var scoringRun = 0;
-            var fP1Touched = false;
-            var fP2Touched = false;
-            var nPointsScored = 0;
-            var startTime = null;
-            _game.nScore = 5;
-            var fInPlay = false;
-
-            var matchTime = 0;
-
             drawingThread();
 
             startRally(false);
 
             function startRally(player2Serves)
             {
-                drawPrompt("", 1);
+                setCommentary();
                 resetSlimers();
                 resetBall(player2Serves);
                 clear();
@@ -784,10 +793,10 @@
                 drawScores();
                 replayStart = false;
                 replayPos = 0;
-                fP1Touched = false;
-                fP2Touched = false;
+                _game.fP1Touched = false;
+                _game.fP2Touched = false;
                 _game.canChangeColor = true;
-                startTime = new Date().getTime();
+                _game.startTime = new Date().getTime();
                 updateRally();
             }
 
@@ -796,43 +805,43 @@
                 updateSlimers();
                 clear();
                 draw();
-                drawStatus(nPointsScored, matchTime);
+                drawStatus(_game.nPointsScored, _game.matchTime);
                 requestAnimationFrame(drawingThread);
             }
 
             function updateRally()
             {
-                matchTime += new Date().getTime() - startTime;
-                startTime = new Date().getTime();
-                if(_game.ball.y < 35)
+                _game.matchTime += new Date().getTime() - _game.startTime;
+                _game.startTime = new Date().getTime();
+                if (_game.ball.y < 35)
                 {
                     var scoreTime = new Date().getTime();
-                    nPointsScored++;
+                    _game.nPointsScored++;
                     var player2Scores = _game.ball.x <= 500;
                     _game.nScore += player2Scores ? -1 : 1;
-                    if ((_game.ball.x <= 500) && (scoringRun >= 0))
+                    if ((_game.ball.x <= 500) && (_game.scoringRun >= 0))
                     {
-                        scoringRun++;
+                        _game.scoringRun++;
                     }
-                    else if ((_game.ball.x > 500) && (scoringRun <= 0))
+                    else if ((_game.ball.x > 500) && (_game.scoringRun <= 0))
                     {
-                        scoringRun--;
+                        _game.scoringRun--;
                     }
-                    else if ((_game.ball.x <= 500) && (scoringRun <= 0))
+                    else if ((_game.ball.x <= 500) && (_game.scoringRun <= 0))
                     {
-                        scoringRun = 1;
+                        _game.scoringRun = 1;
                     }
-                    else if ((_game.ball.x > 500) && (scoringRun >= 0))
+                    else if ((_game.ball.x > 500) && (_game.scoringRun >= 0))
                     {
-                        scoringRun = -1;
+                        _game.scoringRun = -1;
                     }
                     // Anyone super slime?
-                    if (scoringRun <= -_game.scoring_run_for_super)
+                    if (_game.scoringRun <= -_game.scoring_run_for_super)
                     {
                         _game.player1.super = true;
                         _game.player2.super = false;
                     }
-                    else if (scoringRun >= _game.scoring_run_for_super)
+                    else if (_game.scoringRun >= _game.scoring_run_for_super)
                     {
                         _game.player1.super = false;
                         _game.player2.super = true;
@@ -842,15 +851,16 @@
                         _game.player1.super = false;
                         _game.player2.super = false;
                     }
-                    drawPrompt(getCommentary(fP1Touched, fP2Touched, _game.nScore, nPointsScored, scoringRun), 0);
 
-                    if(_game.nScore != 0 && _game.nScore != 10)
+                    _game.mousePressed = false;
+
+                    if (_game.nScore != 0 && _game.nScore != 10)
                     {
                         _game.canChangeColor = false;
-                        drawPrompt("Click mouse for replay...", 1);
+                        setCommentary(getCommentary(_game.fP1Touched, _game.fP2Touched, _game.nScore, _game.nPointsScored, _game.scoringRun), "Click mouse for replay...");
 
-                        _game.mousePressed = false;
-                        setTimeout(function(){
+                        setTimeout(function ()
+                        {
                             if (_game.mousePressed)
                             {
                                 //TODO playReplay
@@ -858,7 +868,7 @@
                             }
                             else
                             {
-                                startTime += new Date().getTime() - scoreTime;
+                                _game.startTime += new Date().getTime() - scoreTime;
                                 startRally(player2Scores);
                             }
                         }, 2500);
@@ -866,17 +876,32 @@
                     }
                     else
                     {
-                         var promptMsg = _game.nScore == 0 ? _game.player2.name : _game.player1.name;
-                         promptMsg += " Wins the Game!";
-                         drawPrompt(promptMsg, 1);
-                         drawScores();
-                    //     var gameDoneDraw = function() {
-                    //         requestAnimationFrame(function() {
-                    //         setTimeout(gameDoneDraw, 1000/50 - 1000/60);
-                    //     })};
-                    //     requestAnimationFrame(function() {
-                    //         setTimeout(, 1000/50 - 1000/60);
-                    //     });
+                        var promptMsg = _game.nScore == 0 ? _game.player2.name : _game.player1.name;
+                        promptMsg += "Wins the Game!";
+                        setCommentary(getCommentary(_game.fP1Touched, _game.fP2Touched, _game.nScore, _game.nPointsScored, _game.scoringRun), promptMsg);
+                        drawPrompt();
+                        drawScores();
+
+                        function startNewGame()
+                        {
+                            if (_game.mousePressed)
+                            {
+                                _game.mousePressed = false;
+                                var player2StartsNextGame = _game.nScore == 0;
+                                startMatch();
+                                startRally(player2StartsNextGame);
+                            }
+                            else
+                            {
+                                requestAnimationFrame(function ()
+                                {
+                                    // This slows down the game to the original speed (50fps)
+                                    setTimeout(startNewGame, 1000 / 50 - 1000 / 60);
+                                });
+                            }
+                        }
+
+                        startNewGame();
                     }
                 }
                 else
@@ -884,10 +909,11 @@
                     processKeyData();
                     moveSlimers();
                     moveBall();
-                    requestAnimationFrame(function() {
-                        setTimeout(updateRally, 1000/50 - 1000/60);
+                    requestAnimationFrame(function ()
+                    {
+                        // This slows down the game to the original speed (50fps)
+                        setTimeout(updateRally, 1000 / 50 - 1000 / 60);
                     });
-                    //setTimeout(updateRally, 20);
                 }
             }
 
@@ -897,7 +923,7 @@
                 var player1Y = _game.player1.y;
                 var player2X = _game.player2.x;
                 var player2Y = _game.player2.y;
-                
+
                 player1X += _game.player1.vX * _game.timing_multiplier;
                 if (player1X < _game.slime_radius)
                 {
@@ -979,8 +1005,6 @@
                 _game.player2.setY(player2Y);
             }
 
-
-
             function moveBall()
             {
                 var maxXV = 15; // was 15
@@ -1000,16 +1024,13 @@
                 var dvy = _game.ball.vY - _game.player1.vY;
                 if (dy > 0 && dist < _game.player1.radius * 2 + _game.ball_radius && dist > FUDGE)
                 {
-                    /* i have nfi what this is. i'm supposed to have done engineering
-                     dynamics and i can't remember any equation with x*x'+y*y' in it...
-                     it was a long time ago! - wedgey */
-                    var something = (dx * dvx + dy * dvy) / dist;
+                    var velocityChangeP1 = (dx * dvx + dy * dvy) / dist;
                     ballX = _game.player1.x + (_game.player1.radius * 2 + _game.ball_radius) / 2 * dx / dist;
                     ballY = _game.player1.y + (_game.player1.radius * 2 + _game.ball_radius) * dy / dist;
                     // cap the velocity
-                    if (something <= 0)
+                    if (velocityChangeP1 <= 0)
                     {
-                        _game.ball.vX += _game.player1.vX - (2 * dx * something / (dist * _game.timing_multiplier));
+                        _game.ball.vX += _game.player1.vX - (2 * dx * velocityChangeP1 / (dist * _game.timing_multiplier));
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -1018,7 +1039,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player1.vY - (2 * dy * something / (dist * _game.timing_multiplier));
+                        _game.ball.vY += _game.player1.vY - (2 * dy * velocityChangeP1 / (dist * _game.timing_multiplier));
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
@@ -1028,7 +1049,7 @@
                             _game.ball.vY = maxYV;
                         }
                     }
-                    fP1Touched = true;
+                    _game.fP1Touched = true;
                 }
 
                 // that stuff all over again, but for p2.
@@ -1039,12 +1060,12 @@
                 dvy = _game.ball.vY - _game.player2.vY;
                 if (dy > 0 && dist < _game.player2.radius * 2 + _game.ball_radius && dist > FUDGE)
                 {
-                    var something = (dx * dvx + dy * dvy) / dist;
+                    var velocityChangeP2 = (dx * dvx + dy * dvy) / dist;
                     ballX = _game.player2.x + (_game.player2.radius * 2 + _game.ball_radius) / 2 * dx / dist;
                     ballY = _game.player2.y + (_game.player2.radius * 2 + _game.ball_radius) * dy / dist;
-                    if (something <= 0)
+                    if (velocityChangeP2 <= 0)
                     {
-                        _game.ball.vX += _game.player2.vX - (2 * dx * something / (dist * _game.timing_multiplier));
+                        _game.ball.vX += _game.player2.vX - (2 * dx * velocityChangeP2 / (dist * _game.timing_multiplier));
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -1053,7 +1074,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player2.vY - (2 * dy * something / (dist * _game.timing_multiplier));
+                        _game.ball.vY += _game.player2.vY - (2 * dy * velocityChangeP2 / (dist * _game.timing_multiplier));
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
@@ -1063,7 +1084,7 @@
                             _game.ball.vY = maxYV;
                         }
                     }
-                    fP2Touched = true;
+                    _game.fP2Touched = true;
                 }
                 // hits left wall
                 if (ballX < 15)
@@ -1102,9 +1123,8 @@
                 _game.ball.setY(ballY);
             }
 
-
         }
     }
 
-    window["Game"]=Game;
+    window["Game"] = Game;
 })(window, document);
