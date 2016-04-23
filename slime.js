@@ -1030,7 +1030,7 @@
                     // cap the velocity
                     if (velocityChangeP1 <= 0)
                     {
-                        _game.ball.vX += _game.player1.vX - (2 * dx * velocityChangeP1 / (dist * _game.timing_multiplier));
+                        _game.ball.vX += _game.player1.vX - (2 * dx * velocityChangeP1 / dist);
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -1039,7 +1039,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player1.vY - (2 * dy * velocityChangeP1 / (dist * _game.timing_multiplier));
+                        _game.ball.vY += _game.player1.vY - (2 * dy * velocityChangeP1 / dist);
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;
@@ -1065,7 +1065,7 @@
                     ballY = _game.player2.y + (_game.player2.radius * 2 + _game.ball_radius) * dy / dist;
                     if (velocityChangeP2 <= 0)
                     {
-                        _game.ball.vX += _game.player2.vX - (2 * dx * velocityChangeP2 / (dist * _game.timing_multiplier));
+                        _game.ball.vX += _game.player2.vX - (2 * dx * velocityChangeP2 / dist);
                         if (_game.ball.vX < -maxXV)
                         {
                             _game.ball.vX = -maxXV;
@@ -1074,7 +1074,7 @@
                         {
                             _game.ball.vX = maxXV;
                         }
-                        _game.ball.vY += _game.player2.vY - (2 * dy * velocityChangeP2 / (dist * _game.timing_multiplier));
+                        _game.ball.vY += _game.player2.vY - (2 * dy * velocityChangeP2 / dist);
                         if (_game.ball.vY < -maxYV)
                         {
                             _game.ball.vY = -maxYV;

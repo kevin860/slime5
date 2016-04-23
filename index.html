@@ -65,17 +65,16 @@
             function applySettings()
             {
                 var settings = {
-                    ball_radius: parseInt($('#ball_radius').val()),
-                    slime_radius: parseInt($('#slime_radius').val()),
-                    timing_multiplier: parseInt($('#timing_multiplier').val()),
+                    ball_radius: parseFloat($('#ball_radius').val()),
+                    slime_radius: parseFloat($('#slime_radius').val()),
+                    timing_multiplier: parseFloat($('#timing_multiplier').val()),
                     battle_mode: $('#battle_mode')[0].checked,
                     scoring_run_for_super: parseInt($('#super_slime').val())
                 };
                 game.applySettings(settings);
                 return false;
             }
-            $('form input').change(applySettings);
-            $('form').submit(function(){game.restart()})
+            $('form').submit(applySettings)
         </script>
     </div>
 </div>
