@@ -179,11 +179,11 @@
          */
         this.clear = function (canvas)
         {
-            var rPix = _this.radius * canvas.width / WIDTH;
-            var xPix = (_this.previousX - _this.radius) * canvas.width / WIDTH - 1;
+            var rPix = Math.max(_this.radius, 50) * canvas.width / WIDTH;
+            var xPix = (_this.previousX - Math.max(_this.radius, 50)) * canvas.width / WIDTH - 1;
             var yPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height / HEIGHT - rPix - 1;
-            var wPix = _this.radius * 2 * canvas.width / WIDTH + 2;
-            var hPix = _this.radius * canvas.width / WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
+            var wPix = Math.max(_this.radius, 50) * 2 * canvas.width / WIDTH + 2;
+            var hPix = Math.max(_this.radius, 50) * canvas.width / WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
 
             var c = canvas.getContext('2d');
             c.beginPath();
