@@ -110,6 +110,33 @@
             c.arc(xPix, yPix, rPix, Math.PI, 0);
             c.fill();
 
+            // Whale slimes!
+            if (_this.radius == 75)
+            {
+                c.beginPath();
+                var tr = rPix * .65;
+                var tw = 10;
+                if (_this.looksRight)
+                {
+                    c.arc(xPix - rPix, yPix - tr, tr, Math.PI / 2, Math.PI);
+                    c.arc(xPix - rPix - tr, yPix - tr - tr / 2, tr / 2, Math.PI / 2, Math.PI);
+                    c.lineTo(xPix - rPix - tr + tw, yPix - tr - tr / 4);
+                    c.lineTo(xPix - rPix, yPix - tr - tr / 2);
+                    c.arc(xPix - rPix - tr + tw + tw, yPix - tr - tr / 2, tr / 2, 0, Math.PI / 2);
+                    c.arc(xPix - rPix + tw + tw, yPix - tr - tw, tr, Math.PI, Math.PI / 2, true);
+                }
+                else
+                {
+                    c.arc(xPix + rPix, yPix - tr, tr, Math.PI / 2, 0, true);
+                    c.arc(xPix + rPix + tr, yPix - tr - tr / 2, tr / 2, Math.PI / 2, 0, true);
+                    c.lineTo(xPix + rPix + tr - tw, yPix - tr - tr / 4);
+                    c.lineTo(xPix + rPix, yPix - tr - tr / 2);
+                    c.arc(xPix + rPix + tr - tw - tw, yPix - tr - tr / 2, tr / 2, Math.PI, Math.PI / 2, true);
+                    c.arc(xPix + rPix - tw - tw, yPix - tr - tw, tr, 0, Math.PI / 2);
+                }
+                c.fill();
+            }
+
             // Draw eye unless blinking
             if (_this.blinkCount !== 0)
             {
@@ -184,6 +211,16 @@
             var yPix = ((4 * HEIGHT / 5) - _this.previousY) * canvas.height / HEIGHT - rPix - 1;
             var wPix = Math.max(_this.radius, 50) * 2 * canvas.width / WIDTH + 2;
             var hPix = Math.max(_this.radius, 50) * canvas.width / WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
+
+            // Whale slimes!
+            if (_this.radius == 75)
+            {
+                if (_this.looksRight)
+                {
+                    xPix -= rPix;
+                }
+                wPix += rPix;
+            }
 
             var c = canvas.getContext('2d');
             c.beginPath();
@@ -312,12 +349,16 @@
         var _game = this;
         applySettings(settings);
 
+        _game.eventListeners = [];
+
         _game.commentary = ["", ""];
 
         _game.canChangeColor = false;
         _game.player1 = new Player(SLIME_COLORS[_game.player1Character], SLIME_NAMES[_game.player1Character], _game.slime_radius, true);
         _game.player2 = new Player(SLIME_COLORS[_game.player2Character], SLIME_NAMES[_game.player2Character], _game.slime_radius, false);
         _game.ball = new Ball(_game.ball_radius);
+
+        _game.replay = [];
 
         function startMatch()
         {
@@ -378,6 +419,24 @@
         {
             _game.commentary[0] = first ? first : "";
             _game.commentary[1] = second ? second : "";
+        }
+
+        function broadcast(eventName, eventData)
+        {
+            _game.eventListeners.forEach(function(listener){
+                if (listener.eventName === eventName)
+                {
+                    listener.process(eventData, _game);
+                }
+            });
+        }
+
+        function on(eventName, callback)
+        {
+            _game.eventListeners.push({
+                eventName: eventName,
+                process: callback
+            });
         }
 
         /**
@@ -639,7 +698,7 @@
                     {
                         _game.player1Character = (_game.player1Character < SLIME_NAMES.length - 1) ? (_game.player1Character + 1) : 0;
                     }
-                    while (_game.player1Character == _game.player2Character);
+                    while (_game.player1Character === _game.player2Character);
                     updateSlimers();
                     drawScores();
                     break;
@@ -654,7 +713,7 @@
                     {
                         _game.player2Character = (_game.player2Character < SLIME_NAMES.length - 1) ? (_game.player2Character + 1) : 0;
                     }
-                    while (_game.player2Character == _game.player1Character);
+                    while (_game.player2Character === _game.player1Character);
                     updateSlimers();
                     drawScores();
                     break;
@@ -680,7 +739,7 @@
                 _game.player1.vX = 0;
             }
             // player1 jump
-            if (_game.player1Keys.up && _game.player1.y == 0)
+            if (_game.player1Keys.up && _game.player1.y === 0)
             {
                 _game.player1.vY = _game.player1.super ? 45 : 31;
             }
@@ -698,7 +757,7 @@
                 _game.player2.vX = 0;
             }
             // player2 jump
-            if (_game.player2Keys.up && _game.player2.y == 0)
+            if (_game.player2Keys.up && _game.player2.y === 0)
             {
                 _game.player2.vY = _game.player2.super ? 45 : 31;
             }
@@ -815,6 +874,7 @@
                 _game.startTime = new Date().getTime();
                 if (_game.ball.y < 35)
                 {
+                    broadcast('ball.collision.ground', {})
                     var scoreTime = new Date().getTime();
                     _game.nPointsScored++;
                     var player2Scores = _game.ball.x <= 500;
