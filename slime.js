@@ -45,14 +45,6 @@
     var battle_mode = true; // false
     var scoring_run_for_super = 3;
 
-    var rob = new Image();
-    rob.addEventListener('load', function (e)
-    {
-        SLIME_COLORS.push("imgRob");
-        SLIME_NAMES.push("Rob ");
-    });
-    rob.src = "robslime_360.png";
-
     /**
      * A player (slime)
      * @param color
@@ -653,6 +645,7 @@
         function processKeyDown(e)
         {
             e.stopPropagation();
+            e.preventDefault();
             switch (e.keyCode)
             {
                 default:
