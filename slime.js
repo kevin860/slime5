@@ -37,6 +37,8 @@
 
     /**@const*/ var FUDGE = 5; // 5
 
+    /**@const*/ var REPLAY_BUFFER = 500;
+
     var ball_radius = 25; // 25
     var slime_radius = 50; // 50
     var timing_multiplier = 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
@@ -357,8 +359,6 @@
         _game.player1 = new Player(SLIME_COLORS[_game.player1Character], SLIME_NAMES[_game.player1Character], _game.slime_radius, true);
         _game.player2 = new Player(SLIME_COLORS[_game.player2Character], SLIME_NAMES[_game.player2Character], _game.slime_radius, false);
         _game.ball = new Ball(_game.ball_radius);
-
-        _game.replay = [];
 
         function startMatch()
         {
@@ -825,7 +825,7 @@
         function startGame()
         {
             var replayPos = 0;
-            var replayStart = 0;
+            var replayData = [];
 
             /* Reset the game */
             startMatch();
@@ -850,8 +850,8 @@
                 drawNet();
                 updateSlimers();
                 drawScores();
-                replayStart = false;
                 replayPos = 0;
+                replayData = [];
                 _game.fP1Touched = false;
                 _game.fP2Touched = false;
                 _game.canChangeColor = true;
@@ -874,7 +874,7 @@
                 _game.startTime = new Date().getTime();
                 if (_game.ball.y < 35)
                 {
-                    broadcast('ball.collision.ground', {})
+                    broadcast('ball.collision.ground', {});
                     var scoreTime = new Date().getTime();
                     _game.nPointsScored++;
                     var player2Scores = _game.ball.x <= 500;
@@ -919,12 +919,53 @@
                         _game.canChangeColor = false;
                         setCommentary(getCommentary(_game.fP1Touched, _game.fP2Touched, _game.nScore, _game.nPointsScored, _game.scoringRun), "Click mouse for replay...");
 
+                        function playReplay()
+                        {
+                            if (_game.mousePressed)
+                            {
+                                _game.mousePressed = false;
+                                _game.startTime += new Date().getTime() - scoreTime;
+                                startRally(player2Scores);
+                            }
+                            else
+                            {
+                                var workPos = replayPos;
+                                if (workPos >= replayData.length + 50)
+                                {
+                                    workPos = replayData.length - 1;
+                                    replayPos = 0;
+                                }
+                                else if (workPos >= replayData.length)
+                                {
+                                    workPos = replayData.length - 1;
+                                }
+                                replayPos++;
+                                
+                                _game.ball.setX(replayData[workPos].ball.x);
+                                _game.ball.setY(replayData[workPos].ball.y);
+                                _game.player1.setX(replayData[workPos].player1.x);
+                                _game.player1.setY(replayData[workPos].player1.y);
+                                _game.player2.setX(replayData[workPos].player2.x);
+                                _game.player2.setY(replayData[workPos].player2.y);
+
+                                clear();
+                                draw();
+
+                                requestAnimationFrame(function ()
+                                {
+                                    // This slows down the game to the original speed (50fps)
+                                    setTimeout(playReplay, 1000 / 50 - 1000 / 60);
+                                });
+                            }
+                        }
+
                         setTimeout(function ()
                         {
-                            if (false)//_game.mousePressed)
+                            if (_game.mousePressed)
                             {
-                                //TODO playReplay
                                 _game.mousePressed = false;
+                                setCommentary(_game.commentary[0], "Click mouse to continue...");
+                                playReplay();
                             }
                             else
                             {
@@ -969,6 +1010,7 @@
                     processKeyData();
                     moveSlimers();
                     moveBall();
+                    updateReplayData();
                     requestAnimationFrame(function ()
                     {
                         // This slows down the game to the original speed (50fps)
@@ -1183,6 +1225,27 @@
                 _game.ball.setY(ballY);
             }
 
+            function updateReplayData()
+            {
+                if (replayData.length > REPLAY_BUFFER)
+                {
+                    replayData.shift();
+                }
+                replayData.push({
+                    ball: {
+                        x: _game.ball.x,
+                        y: _game.ball.y
+                    },
+                    player1: {
+                        x: _game.player1.x,
+                        y: _game.player1.y
+                    },
+                    player2: {
+                        x: _game.player2.x,
+                        y: _game.player2.y
+                    }
+                })
+            }
         }
     }
 
