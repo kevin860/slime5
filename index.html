@@ -74,6 +74,7 @@
                 game.applySettings(settings);
                 return false;
             }
+            window['game'] = game;
             $('form').submit(applySettings);
             applySettings();
         </script>

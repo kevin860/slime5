@@ -21,6 +21,14 @@
     /**@const*/ var COURT_COLOR = "grey";
     /**@const*/ var NET_COLOR = "white";
 
+    //P1 Keys
+    /**@const*/ var KEYA = 65;
+    /**@const*/ var KEYD = 68;
+    /**@const*/ var KEYS = 83;
+    /**@const*/ var KEYW = 87;
+    /**@const*/ var KEYX = 88;
+
+    //P2 Keys
     /**@const*/ var LEFT = 37;
     /**@const*/ var KEYJ = 74;
     /**@const*/ var RIGHT = 39;
@@ -29,12 +37,13 @@
     /**@const*/ var KEYK = 75;
     /**@const*/ var UP = 38;
     /**@const*/ var KEYI = 73;
+    /**@const*/ var KEYM = 77;
 
-    /**@const*/ var KEYA = 65;
-    /**@const*/ var KEYD = 68;
-    /**@const*/ var KEYS = 83;
-    /**@const*/ var KEYW = 87;
+    /**@const*/ var VALID_P1_BOOST_KEY_CODES = [KEYA, KEYD, KEYW, KEYS];
+    /**@const*/ var VALID_P2_BOOST_KEY_CODES = [LEFT, RIGHT, UP, DOWN, KEYJ, KEYL, KEYI, KEYK];
 
+    /**@const*/ var BOOST_KEY_PRESS_WINDOW_IN_MS = 800;
+    /**@const*/ var BOOST_WINDOW = 2;
     /**@const*/ var FUDGE = 5; // 5
 
     /**@const*/ var REPLAY_BUFFER = 500;
@@ -44,6 +53,7 @@
     var timing_multiplier = 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
     var battle_mode = true; // false
     var scoring_run_for_super = 3;
+    var boost_mode = false;
 
     /**
      * A player (slime)
@@ -54,8 +64,9 @@
      * @param name
      * @param radius
      * @param looksRight
+     * @param keyCodes
      */
-    function Player(color, name, radius, looksRight)
+    function Player(color, name, radius, looksRight, keyCodes)
     {
         var _this = this;
 
@@ -70,6 +81,130 @@
         this.looksRight = looksRight;
 
         this.radius = radius;
+        this.boostRemaining = 0;
+        this.hasBoosted = false;
+        this.boostKeyCode = null;
+        this.lastKeyPress = null;
+        this.secondLastKeyPress = null;
+
+        this.keys = {
+            "left": false,
+            "right": false,
+            "up": false,
+            "down": false
+        };
+
+        this.boostCodes = {
+            "left": [],
+            "right": [],
+            "up": [],
+            "down": []
+        };
+        for(var i = 0; i < keyCodes.length; i += 4)
+        {
+            _this.boostCodes["left"].push(keyCodes[i]);
+            _this.boostCodes["right"].push(keyCodes[i+1]);
+            _this.boostCodes["up"].push(keyCodes[i+2]);
+            _this.boostCodes["down"].push(keyCodes[i+3]);
+        }
+
+
+        this.reset = function(xPosition)
+        {
+            _this.setX(xPosition);
+            _this.setY(0);
+            _this.vX = 0;
+            _this.vY = 0;
+            _this.boostRemaining = 0;
+            _this.hasBoosted = false;
+            _this.boostKeyCode = null;
+            _this.lastKeyPress = null;
+            _this.secondLastKeyPress = null;
+            console.log("RESET");
+        };
+
+        this.updateBoost = function(game)
+        {
+            if(game.boost_mode !== false) {
+                return;
+            }
+
+            if(_this.boostRemaining > 0 || _this.hasBoosted)
+            {
+                return;
+            }
+            else if(_this.lastKeyPress === null || _this.secondLastKeyPress === null)
+            {
+                return;
+            }
+            else if(_this.lastKeyPress.start - _this.secondLastKeyPress.start < BOOST_KEY_PRESS_WINDOW_IN_MS)
+            {
+                if(_this.lastKeyPress.keyCode === _this.secondLastKeyPress.keyCode)
+                {
+                    _this.boostRemaining = BOOST_WINDOW;
+                    _this.hasBoosted = true;
+                    _this.boostKeyCode = _this.lastKeyPress.keyCode;
+                    _this.lastKeyPress = null;
+                    _this.secondLastKeyPress = null;
+                    console.log("BOOST");
+                }
+            }
+
+            if(new Date() - _this.secondLastKeyPress.start > BOOST_KEY_PRESS_WINDOW_IN_MS)
+            {
+                _this.secondLastKeyPress = null;
+            }
+            if(new Date() - _this.lastKeyPress.start > BOOST_KEY_PRESS_WINDOW_IN_MS)
+            {
+                _this.lastKeyPress = null;
+            }
+        };
+
+        this.updateSpeeds = function()
+        {
+
+            if (_this.keys.left)
+            {
+                _this.vX = _this.super ? -16 : -8;
+            }
+            else if (_this.keys.right)
+            {
+                _this.vX = _this.super ? 16 : 8;
+            }
+            else
+            {
+                _this.vX = 0;
+            }
+            // player1 jump
+            if (_this.keys.up && _this.y === 0)
+            {
+                _this.vY = _this.super ? 45 : 31;
+            }
+        };
+
+        this.getBoostDirection = function()
+        {
+            if(_this.boostRemaining === 0)
+            {
+                return '';
+            }
+            else if(_this.boostCodes.down.indexOf(_this.boostKeyCode) > -1)
+            {
+                return "down";
+            }
+            else if(_this.boostCodes.up.indexOf(_this.boostKeyCode) > -1)
+            {
+                return "up";
+            }
+            else if(_this.boostCodes.left.indexOf(_this.boostKeyCode) > -1)
+            {
+                return "left";
+            }
+            else
+            {
+                return "right";
+            }
+        };
 
         /**
          * Draw the player on the screen
@@ -87,7 +222,7 @@
             // Draw slimer
             if (!_this.super)
             {
-                if (_this.color && this.color.indexOf("img") == 0)
+                if (_this.color && this.color.indexOf("img") === 0)
                 {
                     c.fillStyle = c.createPattern(rob, 'no-repeat');
                 }
@@ -105,7 +240,7 @@
             c.fill();
 
             // Whale slimes!
-            if (_this.radius == 75)
+            if (_this.radius === 75)
             {
                 c.beginPath();
                 var tr = rPix * .65;
@@ -207,7 +342,7 @@
             var hPix = Math.max(_this.radius, 50) * canvas.width / WIDTH + 1 + (_this.previousY > 0 ? 1 : 0);
 
             // Whale slimes!
-            if (_this.radius == 75)
+            if (_this.radius === 75)
             {
                 if (_this.looksRight)
                 {
@@ -246,6 +381,27 @@
         {
             _this.y = newY;
         };
+
+        /**
+         * Moves any existing KeyPress over to the second to last, and stores a new KeyPress.
+         * @param keyCode
+         */
+        this.addKeyPress = function(keyCode)
+        {
+            _this.secondLastKeyPress = _this.lastKeyPress;
+            _this.lastKeyPress = new KeyPress(keyCode);
+        }
+    }
+
+    /**
+     * A KeyPress
+     * @constructor
+     * @param keyCode
+     */
+    function KeyPress(keyCode)
+    {
+        this.start = new Date();
+        this.keyCode = keyCode;
     }
 
     /**
@@ -348,8 +504,8 @@
         _game.commentary = ["", ""];
 
         _game.canChangeColor = false;
-        _game.player1 = new Player(SLIME_COLORS[_game.player1Character], SLIME_NAMES[_game.player1Character], _game.slime_radius, true);
-        _game.player2 = new Player(SLIME_COLORS[_game.player2Character], SLIME_NAMES[_game.player2Character], _game.slime_radius, false);
+        _game.player1 = new Player(SLIME_COLORS[_game.player1Character], SLIME_NAMES[_game.player1Character], _game.slime_radius, true, VALID_P1_BOOST_KEY_CODES);
+        _game.player2 = new Player(SLIME_COLORS[_game.player2Character], SLIME_NAMES[_game.player2Character], _game.slime_radius, false, VALID_P2_BOOST_KEY_CODES);
         _game.ball = new Ball(_game.ball_radius);
 
         function startMatch()
@@ -379,17 +535,7 @@
             _game.timing_multiplier = settings.timing_multiplier ? settings.timing_multiplier : 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
             _game.battle_mode = settings.battle_mode !== undefined ? settings.battle_mode : false; // false
             _game.scoring_run_for_super = settings.scoring_run_for_super ? settings.scoring_run_for_super : 3;
-
-            _game.player1Keys = {
-                "left": false,
-                "right": false,
-                "up": false
-            };
-            _game.player2Keys = {
-                "left": false,
-                "right": false,
-                "up": false
-            };
+            _game.boost_mode = settings.boost_mode !== undefined ? settings.boost_mode : false;
         }
 
         this.applySettings = applySettings;
@@ -455,7 +601,7 @@
         function drawPrompt()
         {
             var c = _game.canvas.getContext('2d');
-            var empty = _game.commentary[0].length == 0 && _game.commentary[1].length == 0;
+            var empty = _game.commentary[0].length === 0 && _game.commentary[1].length === 0;
             if (!empty)
             {
                 c.font = '14px Helvetica';
@@ -547,15 +693,8 @@
 
         function resetSlimers()
         {
-            _game.player1.setX(200);
-            _game.player1.setY(0);
-            _game.player1.vX = 0;
-            _game.player1.vY = 0;
-
-            _game.player2.setX(800);
-            _game.player2.setY(0);
-            _game.player2.vX = 0;
-            _game.player2.vY = 0;
+            _game.player1.reset(200);
+            _game.player2.reset(800);
         }
 
         function resetBall(player2)
@@ -573,7 +712,7 @@
             {
                 promptMsg = "What can I say?";
             }
-            else if ((scoringRun < 0 ? -scoringRun : scoringRun) == _game.scoring_run_for_super)
+            else if ((scoringRun < 0 ? -scoringRun : scoringRun) === _game.scoring_run_for_super)
             {
                 promptMsg += "is on fire!";
             }
@@ -591,11 +730,11 @@
                 {
                     case 0: // '\0'
                     case 10: // '\n'
-                        if (nPointsScored == 5)
+                        if (nPointsScored === 5)
                         {
                             promptMsg += "Wins with a QUICK FIVE!!!";
                         }
-                        else if (scoringRun == 8)
+                        else if (scoringRun === 8)
                         {
                             promptMsg += "Wins with a BIG NINE!!!";
                         }
@@ -644,6 +783,15 @@
 
         function processKeyDown(e)
         {
+            if(VALID_P1_BOOST_KEY_CODES.indexOf(e.keyCode) > -1)
+            {
+                _game.player1.addKeyPress(e.keyCode);
+            }
+            if(VALID_P2_BOOST_KEY_CODES.indexOf(e.keyCode) > -1)
+            {
+                _game.player2.addKeyPress(e.keyCode);
+            }
+
             e.stopPropagation();
             e.preventDefault();
             switch (e.keyCode)
@@ -652,37 +800,24 @@
                     break;
 
                 case KEYA:
-                    _game.player1Keys["left"] = true;
-                    _game.player1Keys["right"] = false;
+                    _game.player1.keys["left"] = true;
+                    _game.player1.keys["right"] = false;
                     break;
 
                 case KEYD:
-                    _game.player1Keys["right"] = true;
-                    _game.player1Keys["left"] = false;
+                    _game.player1.keys["right"] = true;
+                    _game.player1.keys["left"] = false;
                     break;
 
                 case KEYW:
-                    _game.player1Keys["up"] = true;
-                    break;
-
-                case LEFT:
-                case KEYJ:
-                    _game.player2Keys["left"] = true;
-                    _game.player2Keys["right"] = false;
-                    break;
-
-                case RIGHT:
-                case KEYL:
-                    _game.player2Keys["right"] = true;
-                    _game.player2Keys["left"] = false;
-                    break;
-
-                case UP:
-                case KEYI:
-                    _game.player2Keys["up"] = true;
+                    _game.player1.keys["up"] = true;
                     break;
 
                 case KEYS:
+                    _game.player1.keys["down"] = true;
+                    break;
+
+                case KEYX:
                     if (!_game.canChangeColor)
                     {
                         break;
@@ -696,8 +831,28 @@
                     drawScores();
                     break;
 
+                case LEFT:
+                case KEYJ:
+                    _game.player2.keys["left"] = true;
+                    _game.player2.keys["right"] = false;
+                    break;
+
+                case RIGHT:
+                case KEYL:
+                    _game.player2.keys["right"] = true;
+                    _game.player2.keys["left"] = false;
+                    break;
+
+                case UP:
+                case KEYI:
+                    _game.player2.keys["up"] = true;
+                    break;
+
                 case DOWN:
                 case KEYK:
+                    _game.player2.keys["down"] = true;
+                    break;
+                case KEYM:
                     if (!_game.canChangeColor)
                     {
                         break;
@@ -716,44 +871,49 @@
             }
         }
 
+        function checkForBoosts(player)
+        {
+            if(_game.boost_mode !== false) {
+                return player;
+            }
+            if(player.boostRemaining > 0 || player.hasBoosted)
+            {
+                return player;
+            }
+            else if(player.lastKeyPress === null || player.secondLastKeyPress === null)
+            {
+                return player;
+            }
+            else if(player.lastKeyPress.start - player.secondLastKeyPress.start < BOOST_KEY_PRESS_WINDOW_IN_MS)
+            {
+                if(player.lastKeyPress.keyCode === player.secondLastKeyPress.keyCode)
+                {
+                    player.boostRemaining = BOOST_WINDOW;
+                    player.hasBoosted = true;
+                    player.boostKeyCode = player.lastKeyPress.keyCode;
+                    player.lastKeyPress = null;
+                    player.secondLastKeyPress = null;
+                    console.log("BOOST");
+                }
+            }
+            if(new Date() - player.secondLastKeyPress.start > BOOST_KEY_PRESS_WINDOW_IN_MS)
+            {
+                player.secondLastKeyPress = null;
+            }
+            if(new Date() - player.lastKeyPress.start > BOOST_KEY_PRESS_WINDOW_IN_MS)
+            {
+                player.lastKeyPress = null;
+            }
+            return player;
+        }
+        
         function processKeyData()
         {
-            // player1 left/right
-            if (_game.player1Keys.left)
-            {
-                _game.player1.vX = _game.player1.super ? -16 : -8;
-            }
-            else if (_game.player1Keys.right)
-            {
-                _game.player1.vX = _game.player1.super ? 16 : 8;
-            }
-            else
-            {
-                _game.player1.vX = 0;
-            }
-            // player1 jump
-            if (_game.player1Keys.up && _game.player1.y === 0)
-            {
-                _game.player1.vY = _game.player1.super ? 45 : 31;
-            }
-            // player2 left/right
-            if (_game.player2Keys.left)
-            {
-                _game.player2.vX = _game.player2.super ? -16 : -8;
-            }
-            else if (_game.player2Keys.right)
-            {
-                _game.player2.vX = _game.player2.super ? 16 : 8;
-            }
-            else
-            {
-                _game.player2.vX = 0;
-            }
-            // player2 jump
-            if (_game.player2Keys.up && _game.player2.y === 0)
-            {
-                _game.player2.vY = _game.player2.super ? 45 : 31;
-            }
+            _game.player1.updateBoost(_game);
+            _game.player2.updateBoost(_game);
+
+            _game.player1.updateSpeeds();
+            _game.player2.updateSpeeds();
         }
 
         function processKeyUp(e)
@@ -766,32 +926,40 @@
                     break;
 
                 case KEYA:
-                    _game.player1Keys["left"] = false;
+                    _game.player1.keys["left"] = false;
                     break;
 
                 case KEYD:
-                    _game.player1Keys["right"] = false;
+                    _game.player1.keys["right"] = false;
                     break;
 
                 case KEYW:
-                    _game.player1Keys["up"] = false;
+                    _game.player1.keys["up"] = false;
+                    break;
+
+                case KEYS:
+                    _game.player1.keys["down"] = false;
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    _game.player2Keys["left"] = false;
+                    _game.player2.keys["left"] = false;
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    _game.player2Keys["right"] = false;
+                    _game.player2.keys["right"] = false;
                     break;
 
                 case UP:
                 case KEYI:
-                    _game.player2Keys["up"] = false;
+                    _game.player2.keys["up"] = false;
                     break;
 
+                case DOWN:
+                case KEYK:
+                    _game.player2.keys["down"] = false;
+                    break;
             }
         }
 
@@ -907,7 +1075,7 @@
 
                     _game.mousePressed = false;
 
-                    if (_game.nScore != 0 && _game.nScore != 10)
+                    if (_game.nScore !== 0 && _game.nScore !== 10)
                     {
                         _game.canChangeColor = false;
                         setCommentary(getCommentary(_game.fP1Touched, _game.fP2Touched, _game.nScore, _game.nPointsScored, _game.scoringRun), "Click mouse for replay...");
@@ -970,7 +1138,7 @@
                     }
                     else
                     {
-                        var promptMsg = _game.nScore == 0 ? _game.player2.name : _game.player1.name;
+                        var promptMsg = _game.nScore === 0 ? _game.player2.name : _game.player1.name;
                         promptMsg += "Wins the Game!";
                         setCommentary(getCommentary(_game.fP1Touched, _game.fP2Touched, _game.nScore, _game.nPointsScored, _game.scoringRun), promptMsg);
                         drawPrompt();
@@ -981,7 +1149,7 @@
                             if (_game.mousePressed)
                             {
                                 _game.mousePressed = false;
-                                var player2StartsNextGame = _game.nScore == 0;
+                                var player2StartsNextGame = _game.nScore === 0;
                                 startMatch();
                                 startRally(player2StartsNextGame);
                             }
@@ -1046,7 +1214,7 @@
                         player1X = 495 - _game.slime_radius;
                     }
                 }
-                if (_game.player1.vY != 0)
+                if (_game.player1.vY !== 0)
                 {
                     _game.player1.vY -= _game.player1.super ? 4 * _game.timing_multiplier : 2 * _game.timing_multiplier;
                     player1Y += _game.player1.vY * _game.timing_multiplier;
@@ -1056,6 +1224,35 @@
                         _game.player1.vY = 0;
                     }
                 }
+
+                if(_game.player2.boostRemaining > 0)
+                {
+                    var player = _game.player2;
+                    player.boostRemaining -= _game.timing_multiplier;
+                    var boostDirection = player.getBoostDirection();
+
+                    if(boostDirection === "down")
+                    {
+                        player.vY = player.super ? -60 : -45;
+                        player.vX = 0;
+                    }
+                    else if(boostDirection === "up")
+                    {
+                        player.vY = player.super ? 60 : 45;
+                        player.vX = 0;
+                    }
+                    else if(boostDirection === "left")
+                    {
+                        player.vX = player.super ? -32 : -16;
+                        player.vY = 0;
+                    }
+                    else if(boostDirection === "right")
+                    {
+                        player.vX = player.super ? 32 : 16;
+                        player.vY = 0;
+                    }
+                }
+
                 player2X += _game.player2.vX * _game.timing_multiplier;
                 if (player2X > WIDTH - _game.slime_radius)
                 {
@@ -1083,7 +1280,7 @@
                         player2X = 505 + _game.slime_radius;
                     }
                 }
-                if (_game.player2.vY != 0)
+                if (_game.player2.vY !== 0)
                 {
                     _game.player2.vY -= _game.player2.super ? 4 * _game.timing_multiplier : 2 * _game.timing_multiplier;
                     player2Y += _game.player2.vY * _game.timing_multiplier;
@@ -1091,6 +1288,10 @@
                     {
                         player2Y = 0;
                         _game.player2.vY = 0;
+
+                        _game.player2.boostRemaining = 0;
+                        _game.player2.hasBoosted = false;
+                        _game.player2.boostKeyCode = null;
                     }
                 }
 
@@ -1244,3 +1445,4 @@
 
     window["Game"] = Game;
 })(window, document);
+
