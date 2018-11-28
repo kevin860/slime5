@@ -30,12 +30,15 @@
     /**@const*/ var UP = 38;
     /**@const*/ var KEYI = 73;
 
+    /**@const*/ var SPACE = 32;
+
     /**@const*/ var KEYA = 65;
     /**@const*/ var KEYD = 68;
     /**@const*/ var KEYS = 83;
     /**@const*/ var KEYW = 87;
 
     /**@const*/ var FUDGE = 5; // 5
+    /**@const*/ var DOUBLE_TAP_TIME = 200; // 200 ms default
 
     /**@const*/ var REPLAY_BUFFER = 500;
 
@@ -65,6 +68,10 @@
         this.y = 0;
         this.previousX = 0;
         this.previousY = 0;
+        this.vX = 0;
+        this.vY = 0;
+        this.previousKey = null;
+        this.previousKeyTS = null;
         this.super = false;
         this.blinkCount = 0;
         this.looksRight = looksRight;
@@ -337,8 +344,9 @@
         this.canvas = canvas;
         this.height = canvas.height;
         this.width = canvas.width;
-
         this.courtHeight = this.height / 5;
+        this.net_height = 1;
+        this.double_taps = false;
 
         var _game = this;
         applySettings(settings);
@@ -379,16 +387,22 @@
             _game.timing_multiplier = settings.timing_multiplier ? settings.timing_multiplier : 1;//(16.67/1000)/(20/1000);//16.67*2060/1(1000/20)*(1000)//1;//1000/60/20; // 1000/60/20
             _game.battle_mode = settings.battle_mode !== undefined ? settings.battle_mode : false; // false
             _game.scoring_run_for_super = settings.scoring_run_for_super ? settings.scoring_run_for_super : 3;
+            _game.net_height = settings.net_height ? settings.net_height : 1;
+            _game.double_taps = !!settings.double_taps;
 
             _game.player1Keys = {
                 "left": false,
                 "right": false,
-                "up": false
+                "up": false,
+                "previousKeyCode": null,
+                "previousTimestamp": null
             };
             _game.player2Keys = {
                 "left": false,
                 "right": false,
-                "up": false
+                "up": false,
+                "previousKeyCode": null,
+                "previousTimestamp": null
             };
         }
 
@@ -448,7 +462,7 @@
             var c = _game.canvas.getContext('2d');
             c.fillStyle = NET_COLOR;
             c.beginPath();
-            c.rect(_game.width / 2 - 2, (7 * _game.height) / 10, 4, _game.height / 10 + 5);
+            c.rect(_game.width / 2 - 2, (8 - _game.net_height) * _game.height / 10, 4, _game.net_height * _game.height / 10 + 5);
             c.fill();
         }
 
@@ -646,40 +660,53 @@
         {
             e.stopPropagation();
             e.preventDefault();
-            switch (e.keyCode)
+            var kc = e.keyCode;
+            switch (kc)
             {
                 default:
                     break;
 
                 case KEYA:
-                    _game.player1Keys["left"] = true;
-                    _game.player1Keys["right"] = false;
+                    _game.player1Keys["left"] = isPlayer1DoubleTap(kc) ? 2 : 1;
+                    _game.player1Keys["right"] = 0;
+                    _game.player1Keys["previousKeyCode"] = null;
+                    _game.player1Keys["previousTimestamp"] = Date.now();
                     break;
 
                 case KEYD:
-                    _game.player1Keys["right"] = true;
-                    _game.player1Keys["left"] = false;
+                    _game.player1Keys["right"] = isPlayer1DoubleTap(kc) ? 2 : 1;
+                    _game.player1Keys["left"] = 0;
+                    _game.player1Keys["previousKeyCode"] = null;
+                    _game.player1Keys["previousTimestamp"] = Date.now();
                     break;
 
                 case KEYW:
-                    _game.player1Keys["up"] = true;
+                    _game.player1Keys["up"] = 1;
+                    _game.player1Keys["previousKeyCode"] = null;
+                    _game.player1Keys["previousTimestamp"] = Date.now();
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    _game.player2Keys["left"] = true;
-                    _game.player2Keys["right"] = false;
+                    _game.player2Keys["left"] = isPlayer2DoubleTap(kc) ? 2 : 1;
+                    _game.player2Keys["right"] = 0;
+                    _game.player2Keys["previousKeyCode"] = null;
+                    _game.player2Keys["previousTimestamp"] = Date.now();
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    _game.player2Keys["right"] = true;
-                    _game.player2Keys["left"] = false;
+                    _game.player2Keys["right"] = isPlayer2DoubleTap(kc) ? 2 : 1;
+                    _game.player2Keys["left"] = 0;
+                    _game.player2Keys["previousKeyCode"] = null;
+                    _game.player2Keys["previousTimestamp"] = Date.now();
                     break;
 
                 case UP:
                 case KEYI:
-                    _game.player2Keys["up"] = true;
+                    _game.player2Keys["up"] = 1;
+                    _game.player2Keys["previousKeyCode"] = null;
+                    _game.player2Keys["previousTimestamp"] = Date.now();
                     break;
 
                 case KEYS:
@@ -710,10 +737,20 @@
                     updateSlimers();
                     drawScores();
                     break;
-                case ' ':
+                case SPACE:
                     _game.mousePressed = true;
                     break;
             }
+        }
+
+        function isPlayer1DoubleTap(keyCode)
+        {
+            return _game.player1Keys["previousKeyCode"] === keyCode && (Date.now() - _game.player1Keys["previousTimestamp"] < DOUBLE_TAP_TIME);
+        }
+
+        function isPlayer2DoubleTap(keyCode)
+        {
+            return _game.player2Keys["previousKeyCode"] === keyCode && (Date.now() - _game.player2Keys["previousTimestamp"] < DOUBLE_TAP_TIME);
         }
 
         function processKeyData()
@@ -721,11 +758,11 @@
             // player1 left/right
             if (_game.player1Keys.left)
             {
-                _game.player1.vX = _game.player1.super ? -16 : -8;
+                _game.player1.vX = (_game.player1.super ? -16 : -8) * _game.player1Keys.left;
             }
             else if (_game.player1Keys.right)
             {
-                _game.player1.vX = _game.player1.super ? 16 : 8;
+                _game.player1.vX = (_game.player1.super ? 16 : 8) * _game.player1Keys.right;
             }
             else
             {
@@ -739,11 +776,11 @@
             // player2 left/right
             if (_game.player2Keys.left)
             {
-                _game.player2.vX = _game.player2.super ? -16 : -8;
+                _game.player2.vX = (_game.player2.super ? -16 : -8) * _game.player2Keys.left;
             }
             else if (_game.player2Keys.right)
             {
-                _game.player2.vX = _game.player2.super ? 16 : 8;
+                _game.player2.vX = (_game.player2.super ? 16 : 8) * _game.player2Keys.right;
             }
             else
             {
@@ -758,7 +795,6 @@
 
         function processKeyUp(e)
         {
-            //console.log("Keydown: " + new Date());
             e.stopPropagation();
             switch (e.keyCode)
             {
@@ -766,30 +802,36 @@
                     break;
 
                 case KEYA:
-                    _game.player1Keys["left"] = false;
+                    _game.player1Keys["left"] = 0;
+                    _game.player1Keys["previousKeyCode"] = e.keyCode;
                     break;
 
                 case KEYD:
-                    _game.player1Keys["right"] = false;
+                    _game.player1Keys["right"] = 0;
+                    _game.player1Keys["previousKeyCode"] = e.keyCode;
                     break;
 
                 case KEYW:
-                    _game.player1Keys["up"] = false;
+                    _game.player1Keys["up"] = 0;
+                    _game.player1Keys["previousKeyCode"] = e.keyCode;
                     break;
 
                 case LEFT:
                 case KEYJ:
-                    _game.player2Keys["left"] = false;
+                    _game.player2Keys["left"] = 0;
+                    _game.player2Keys["previousKeyCode"] = e.keyCode;
                     break;
 
                 case RIGHT:
                 case KEYL:
-                    _game.player2Keys["right"] = false;
+                    _game.player2Keys["right"] = 0;
+                    _game.player2Keys["previousKeyCode"] = e.keyCode;
                     break;
 
                 case UP:
                 case KEYI:
-                    _game.player2Keys["up"] = false;
+                    _game.player2Keys["up"] = 0;
+                    _game.player2Keys["previousKeyCode"] = e.keyCode;
                     break;
 
             }
@@ -1030,11 +1072,11 @@
                     {
                         player1X = WIDTH - _game.slime_radius;
                     }
-                    else if (player1Y < 50 && player1X > 495 - _game.slime_radius && player1X < 501)
+                    else if (player1Y < (50 * _game.net_height) && player1X > 495 - _game.slime_radius && player1X < 501)
                     {
                         player1X = 495 - _game.slime_radius;
                     }
-                    else if (player1Y < 50 && player1X > 500 && player1X < 505 + _game.slime_radius)
+                    else if (player1Y < (50 * _game.net_height) && player1X > 500 && player1X < 505 + _game.slime_radius)
                     {
                         player1X = 505 + _game.slime_radius;
                     }
@@ -1067,11 +1109,11 @@
                     {
                         player2X = WIDTH - _game.slime_radius;
                     }
-                    else if (player2Y < 50 && player2X < 505 + _game.slime_radius && player2X > 499)
+                    else if (player2Y < (50 * _game.net_height) && player2X < 505 + _game.slime_radius && player2X > 499)
                     {
                         player2X = 505 + _game.slime_radius;
                     }
-                    else if (player2Y < 50 && player2X < 500 && player2X > 495 - _game.slime_radius)
+                    else if (player2Y < (50 * _game.net_height) && player2X < 500 && player2X > 495 - _game.slime_radius)
                     {
                         player2X = 495 - _game.slime_radius;
                     }
@@ -1193,14 +1235,14 @@
                     ballX = 985;
                     _game.ball.vX = -_game.ball.vX;
                 }
-                // hits the post
-                if (ballX > 480 && ballX < 520 && ballY < 140)
+                // hits the net
+                if (ballX > 480 && ballX < 520 && ballY < 140 * _game.net_height)
                 {
                     // bounces off top of net
-                    if (_game.ball.vY < 0 && ballY > 130)
+                    if (_game.ball.vY < 0 && ballY > (140 * _game.net_height) - 10)
                     {
                         _game.ball.vY *= -1;
-                        ballY = 130;
+                        ballY = (140 * _game.net_height) - 10;
                     }
                     else if (ballX < 500)
                     { // hits side of net

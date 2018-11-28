@@ -44,6 +44,10 @@
                         <input type="number" value="50" id="slime_radius"/>
                     </div>
                     <div class="form-group">
+                        <label for="slime_radius">Net height</label>
+                        <input type="number" value="1" id="net_height"/>
+                    </div>
+                    <div class="form-group">
                         <label for="timing_multiplier">Speed multiplier</label>
                         <input type="text" value="1" id="timing_multiplier"/>
                     </div>
@@ -54,6 +58,11 @@
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" id="battle_mode"/> Allow jumps over net
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="double_taps"/> Double taps double speed
                         </label>
                     </div>
                     <button type="submit" class="btn btn-primary">Apply</button>
@@ -69,7 +78,9 @@
                     slime_radius: parseFloat($('#slime_radius').val()),
                     timing_multiplier: parseFloat($('#timing_multiplier').val()),
                     battle_mode: $('#battle_mode')[0].checked,
-                    scoring_run_for_super: parseInt($('#super_slime').val())
+                    scoring_run_for_super: parseInt($('#super_slime').val()),
+                    net_height: parseFloat($('#net_height').val()),
+                    double_taps: $('#double_taps')[0].checked
                 };
                 game.applySettings(settings);
                 return false;
