@@ -388,7 +388,7 @@
             _game.battle_mode = settings.battle_mode !== undefined ? settings.battle_mode : false; // false
             _game.scoring_run_for_super = settings.scoring_run_for_super ? settings.scoring_run_for_super : 3;
             _game.net_height = settings.net_height ? settings.net_height : 1;
-            _game.double_taps = !!settings.double_taps;
+            _game.double_taps = settings.double_taps !== undefined ? settings.double_taps : false; // false
 
             _game.player1Keys = {
                 "left": false,
@@ -745,12 +745,12 @@
 
         function isPlayer1DoubleTap(keyCode)
         {
-            return _game.player1Keys["previousKeyCode"] === keyCode && (Date.now() - _game.player1Keys["previousTimestamp"] < DOUBLE_TAP_TIME);
+            return _game.double_taps && _game.player1Keys["previousKeyCode"] === keyCode && (Date.now() - _game.player1Keys["previousTimestamp"] < DOUBLE_TAP_TIME);
         }
 
         function isPlayer2DoubleTap(keyCode)
         {
-            return _game.player2Keys["previousKeyCode"] === keyCode && (Date.now() - _game.player2Keys["previousTimestamp"] < DOUBLE_TAP_TIME);
+            return _game.double_taps && _game.player2Keys["previousKeyCode"] === keyCode && (Date.now() - _game.player2Keys["previousTimestamp"] < DOUBLE_TAP_TIME);
         }
 
         function processKeyData()
